@@ -66,7 +66,6 @@ export function createElaruAgent(config: ElaruAgentConfig) {
     throw new Error("THIRDWEB_SERVER_WALLET_ADDRESS is required but was not found");
   }
   
-  console.log("✅ [SDK] Server wallet address:", serverWalletAddress);
 
   // Initialize Facilitator (acting as the agent server itself here)
   const agentFacilitator = facilitator({
