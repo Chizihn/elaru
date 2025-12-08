@@ -57,36 +57,43 @@ export function TrustLeaderboard() {
         </p>
       </CardHeader>
       <CardContent>
-        <div className="space-y-3">
-          {agents.map((agent, index) => {
-            const medals = ["🥇", "🥈", "🥉"];
-            const medal = index < 3 ? medals[index] : `#${index + 1}`;
+        {agents.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            <p className="mb-2">No agents registered yet</p>
+            <p className="text-sm">Be the first to join the leaderboard!</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {agents.map((agent, index) => {
+              const medals = ["🥇", "🥈", "🥉"];
+              const medal = index < 3 ? medals[index] : `#${index + 1}`;
 
-            return (
-              <div
-                key={agent.id}
-                className="flex items-center justify-between p-3 rounded-lg bg-background/50 hover:bg-background/80 transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl w-8">{medal}</span>
-                  <div>
-                    <p className="font-semibold">{agent.serviceType}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {agent.walletAddress.substring(0, 6)}...
-                      {agent.walletAddress.substring(38)}
-                    </p>
+              return (
+                <div
+                  key={agent.id}
+                  className="flex items-center justify-between p-3 rounded-lg bg-background/50 hover:bg-background/80 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl w-8">{medal}</span>
+                    <div>
+                      <p className="font-semibold">{agent.serviceType}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {agent.walletAddress.substring(0, 6)}...
+                        {agent.walletAddress.substring(38)}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className="h-4 w-4 text-green-500" />
+                    <Badge variant="secondary" className="text-lg px-3">
+                      {Math.floor(agent.reputationScore)}
+                    </Badge>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4 text-green-500" />
-                  <Badge variant="secondary" className="text-lg px-3">
-                    {Math.floor(agent.reputationScore)}
-                  </Badge>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </CardContent>
     </Card>
   );

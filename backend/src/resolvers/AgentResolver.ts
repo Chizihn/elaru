@@ -52,19 +52,9 @@ export class AgentResolver {
 
   @Query(() => [ReputationHistoryPoint])
   async getReputationHistory(): Promise<ReputationHistoryPoint[]> {
-    // Mock data for the chart until we have a real history table
-    // This allows the frontend to be built with the correct structure
-    const now = new Date();
-    const history: ReputationHistoryPoint[] = [];
-    for (let i = 30; i >= 0; i--) {
-      const date = new Date(now);
-      date.setDate(date.getDate() - i);
-      history.push({
-        date: date.toISOString(),
-        score: 70 + Math.random() * 30, // Random score between 70 and 100
-      });
-    }
-    return history;
+    // Return empty array until we have real reputation history data
+    // The frontend will show "No historical data available yet" message
+    return [];
   }
 
   @Query(() => Agent, { nullable: true })

@@ -78,8 +78,8 @@ export function AuthProvider({
       console.log("AuthProvider: Got nonce:", nonce);
 
       // 2. Sign message
-      // const message = `Sign this message to authenticate with Elaru\n\nNonce: ${nonce}`;
-      const message = `Sign this message to authenticate with Elaru`;
+      const message = `Sign this message to authenticate with Elaru\n\nNonce: ${nonce}`;
+      // const message = `Sign this message to authenticate with Elaru`;
 
       console.log("AuthProvider: Requesting signature...");
       const signature = await signMessageAsync({ message });

@@ -367,7 +367,11 @@ export default function ReputationExplorer() {
                 ) : (
                   <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
                     <Users className="h-12 w-12 mb-4 opacity-50" />
-                    <p>No agents match your search</p>
+                    <p>
+                      {(data?.getAgents || []).length === 0
+                        ? "No agents registered yet"
+                        : "No agents match your search"}
+                    </p>
                   </div>
                 )}
               </div>

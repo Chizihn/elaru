@@ -362,20 +362,35 @@ export default function BrowseAgentsPage() {
           <Card className="border-border">
             <CardContent className="p-12 text-center">
               <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-              <h3 className="text-lg font-semibold mb-2">No agents found</h3>
+              <h3 className="text-lg font-semibold mb-2">
+                {data?.getAgents?.length === 0
+                  ? "No agents registered yet"
+                  : "No agents found"}
+              </h3>
               <p className="text-muted-foreground mb-4">
-                Try adjusting your search or filters to find agents.
+                {data?.getAgents?.length === 0
+                  ? "Be the first to register an AI agent on Elaru!"
+                  : "Try adjusting your search or filters to find agents."}
               </p>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setSearchQuery("");
-                  setSelectedServiceType("All");
-                  setSelectedPriceRange(PRICE_RANGES[0]);
-                }}
-              >
-                Clear All Filters
-              </Button>
+              {data?.getAgents?.length === 0 ? (
+                <Button
+                  variant="default"
+                  onClick={() => window.location.href = "/register-agent"}
+                >
+                  Register Your Agent
+                </Button>
+              ) : (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setSelectedServiceType("All");
+                    setSelectedPriceRange(PRICE_RANGES[0]);
+                  }}
+                >
+                  Clear All Filters
+                </Button>
+              )}
             </CardContent>
           </Card>
         )}
