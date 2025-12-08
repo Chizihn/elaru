@@ -1,0 +1,233 @@
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap");
+@import "tailwindcss";
+
+@theme {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius: 0rem;
+
+  --font-heading: "Space Grotesk", system-ui, sans-serif;
+  --font-body: "Space Grotesk", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+}
+
+:root {
+  /* Neo-Brutalist Color Scheme */
+  --background: hsl(240 10% 8%); /* Deep charcoal */
+  --foreground: hsl(0 0% 98%);
+
+  --card: hsl(240 8% 12%);
+  --card-foreground: hsl(0 0% 98%);
+
+  --popover: hsl(240 8% 12%);
+  --popover-foreground: hsl(0 0% 98%);
+
+  /* Cyan/Electric Blue as primary - unique for blockchain trust */
+  --primary: hsl(180 100% 45%); /* Bright cyan #00e5e5 */
+  --primary-foreground: hsl(240 10% 8%);
+
+  /* Hot pink accent for contrast */
+  --secondary: hsl(330 100% 60%); /* Hot pink #ff3385 */
+  --secondary-foreground: hsl(0 0% 98%);
+
+  --muted: hsl(240 8% 18%);
+  --muted-foreground: hsl(0 0% 60%);
+
+  /* Lime green for success/trust indicators */
+  --accent: hsl(75 100% 50%); /* Electric lime #c0ff00 */
+  --accent-foreground: hsl(240 10% 8%);
+
+  --destructive: hsl(0 100% 60%);
+  --destructive-foreground: hsl(0 0% 98%);
+
+  --border: hsl(0 0% 25%);
+  --input: hsl(240 8% 18%);
+  --ring: hsl(180 100% 45%);
+}
+
+.dark {
+  --background: hsl(240 10% 8%);
+  --foreground: hsl(0 0% 98%);
+
+  --card: hsl(240 8% 12%);
+  --card-foreground: hsl(0 0% 98%);
+
+  --popover: hsl(240 8% 12%);
+  --popover-foreground: hsl(0 0% 98%);
+
+  --primary: hsl(180 100% 45%);
+  --primary-foreground: hsl(240 10% 8%);
+
+  --secondary: hsl(330 100% 60%);
+  --secondary-foreground: hsl(0 0% 98%);
+
+  --muted: hsl(240 8% 18%);
+  --muted-foreground: hsl(0 0% 60%);
+
+  --accent: hsl(75 100% 50%);
+  --accent-foreground: hsl(240 10% 8%);
+
+  --destructive: hsl(0 100% 60%);
+  --destructive-foreground: hsl(0 0% 98%);
+
+  --border: hsl(0 0% 25%);
+  --input: hsl(240 8% 18%);
+  --ring: hsl(180 100% 45%);
+}
+
+/* Global Styles */
+body {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: var(--font-body);
+  /* Geometric grid pattern background */
+  background-image: linear-gradient(
+      rgba(0, 229, 229, 0.03) 1px,
+      transparent 1px
+    ),
+    linear-gradient(90deg, rgba(0, 229, 229, 0.03) 1px, transparent 1px),
+    radial-gradient(circle at 20% 20%, rgba(0, 229, 229, 0.08), transparent 50%),
+    radial-gradient(
+      circle at 80% 80%,
+      rgba(255, 51, 133, 0.06),
+      transparent 50%
+    );
+  background-size: 50px 50px, 50px 50px, 100% 100%, 100% 100%;
+  background-position: 0 0, 0 0, 0 0, 0 0;
+  min-height: 100vh;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+code,
+pre {
+  font-family: var(--font-mono);
+}
+
+/* Layout Utilities */
+.container {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 2rem;
+  padding-right: 2rem;
+  max-width: 80rem; /* 7xl */
+}
+
+@media (min-width: 1400px) {
+  .container {
+    max-width: 1400px;
+  }
+}
+
+/* Utility Classes - Neo-Brutalist Style */
+.glass {
+  background-color: hsl(var(--card));
+  border: 3px solid hsl(var(--border));
+  box-shadow: 6px 6px 0px hsl(var(--primary) / 0.2);
+}
+
+.glass-hover:hover {
+  background-color: hsl(var(--muted));
+  transform: translate(-2px, -2px);
+  box-shadow: 8px 8px 0px hsl(var(--primary) / 0.3);
+  transition: all 0.2s ease;
+}
+
+.text-gradient {
+  background: linear-gradient(135deg, hsl(180 100% 45%), hsl(330 100% 60%));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.btn-gradient {
+  background: linear-gradient(135deg, hsl(180 100% 45%), hsl(330 100% 60%));
+  color: hsl(240 10% 8%);
+  border: 3px solid hsl(240 10% 8%);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.btn-gradient:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0px hsl(var(--primary));
+}
+
+/* Brutalist borders and shadows */
+.brutal-border {
+  border: 3px solid hsl(var(--foreground));
+  box-shadow: 6px 6px 0px hsl(var(--primary));
+}
+
+.brutal-border-secondary {
+  border: 3px solid hsl(var(--border));
+  box-shadow: 4px 4px 0px hsl(var(--secondary) / 0.3);
+}
+
+.brutal-card {
+  background: hsl(var(--card));
+  border: 3px solid hsl(var(--border));
+  box-shadow: 8px 8px 0px hsl(var(--primary) / 0.15);
+  transition: all 0.2s ease;
+}
+
+.brutal-card:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 10px 10px 0px hsl(var(--primary) / 0.25);
+}
+
+/* Trust badge styles */
+.trust-badge {
+  background: linear-gradient(135deg, hsl(75 100% 50%), hsl(180 100% 45%));
+  color: hsl(240 10% 8%);
+  font-weight: 700;
+  border: 3px solid hsl(240 10% 8%);
+  box-shadow: 3px 3px 0px hsl(var(--foreground) / 0.2);
+}
+
+/* Scrollbar styling */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: hsl(var(--muted));
+  border-left: 2px solid hsl(var(--border));
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: hsl(var(--primary));
+  border: 2px solid hsl(var(--background));
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--secondary));
+}

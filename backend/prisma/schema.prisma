@@ -1,0 +1,150 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum TaskStatus {
+  PENDING
+  ASSIGNED
+  PROCESSING
+  PAID
+  REVIEWED
+  COMPLETED
+  FAILED
+}
+
+enum PaymentStatus {
+  INITIATED
+  CONFIRMING
+  VERIFIED
+  COMPLETED
+}
+
+enum DisputeStatus {
+  NONE
+  RAISED
+  VOTING
+  RESOLVED_REFUND
+  RESOLVED_RELEASE
+}
+
+enum DisputeState {
+  PENDING
+  VOTING
+  RESOLVED_REFUND
+  RESOLVED_RELEASE
+}
+
+model User {
+  id            String   @id @default(uuid())
+  walletAddress String   @unique
+  nonce         String   // For signature verification
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  tasks         Task[]
+}
+
+model Task {
+  id              String    @id @default(uuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id])
+  description     String
+  status          TaskStatus    // PENDING, PROCESSING, COMPLETED, FAILED
+  selectedAgentId String?
+  agent           Agent?    @relation(fields: [selectedAgentId], references: [id])
+  paymentTxHash   String?
+  paymentStatus   PaymentStatus?   // INITIATED, CONFIRMING, VERIFIED, COMPLETED
+  result          String?
+  reviewScore     Int?
+  reviewComment   String?
+  createdAt       DateTime  @default(now())
+  completedAt     DateTime?
+  
+  // Dispute fields
+  disputeStatus   DisputeStatus?   // NONE, RAISED, VOTING, RESOLVED_REFUND, RESOLVED_RELEASE
+  disputeReason   String?
+  disputeRaisedAt DateTime?
+  escrowTxHash    String?   // Transaction hash for escrow creation
+  
+  disputes        Dispute[]
+}
+
+model Agent {
+  id              String   @id @default(uuid())
+  tokenId         Int      @unique // On-chain Token ID
+  walletAddress   String   @unique
+  name            String   @default("Unnamed Agent")
+  serviceType     String
+  endpoint        String
+  description     String
+  pricePerRequest String
+  active          Boolean  @default(true)
+  reputationScore Float    @default(0)
+  responseType    String   @default("MARKDOWN") // TEXT, IMAGE, CODE, MARKDOWN, JSON
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Staking fields
+  stakedAmount     String   @default("0")
+  slashedAmount    String   @default("0")
+  stakingTxHash    String?
+  minimumStake     String   @default("500000000000000000")
+
+  reputations     Reputation[]
+  validations     Validation[]
+  tasks           Task[]
+}
+
+model Reputation {
+  id              String   @id @default(uuid())
+  agentId         String
+  agent           Agent    @relation(fields: [agentId], references: [id])
+  reviewer        String
+  score           Int
+  comment         String?
+  paymentProof    String   // x402 Transaction Hash
+  timestamp       DateTime @default(now())
+}
+
+model Validation {
+  id              String   @id @default(uuid())
+  agentId         String
+  agent           Agent    @relation(fields: [agentId], references: [id])
+  validator       String
+  isValid         Boolean
+  comments        String?
+  timestamp       DateTime @default(now())
+}
+
+model Dispute {
+  id              String   @id @default(uuid())
+  taskId          String
+  task            Task     @relation(fields: [taskId], references: [id])
+  raisedBy        String   // Wallet address of disputer
+  reason          String
+  status          DisputeState   // PENDING, VOTING, RESOLVED_REFUND, RESOLVED_RELEASE
+  createdAt       DateTime @default(now())
+  resolvedAt      DateTime?
+  
+  votes           DisputeVote[]
+}
+
+model DisputeVote {
+  id              String   @id @default(uuid())
+  disputeId       String
+  dispute         Dispute  @relation(fields: [disputeId], references: [id])
+  validator       String   // Wallet address of validator
+  approveRefund   Boolean  // true = refund, false = release to agent
+  comment         String?
+  votedAt         DateTime @default(now())
+  
+  @@unique([disputeId, validator]) // One vote per validator per dispute
+}
