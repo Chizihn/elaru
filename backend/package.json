@@ -45,7 +45,6 @@
     "ts-node-dev": "^2.0.0",
     "type-graphql": "^2.0.0-rc.2",
     "winston": "^3.18.3",
-    "zod": "^3.25.76",
     "zustand": "^5.0.8"
   },
   "devDependencies": {

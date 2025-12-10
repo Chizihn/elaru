@@ -23,7 +23,7 @@ const google = createGoogleGenerativeAI({
 // Create the agent using Elaru SDK
 const researchAgent = createElaruAgent({
   walletAddress: AGENT_WALLET,
-  pricePerRequest: process.env.RESEARCH_AGENT_PRICE || "180000", // 0.18 USDC
+  pricePerRequest: process.env.RESEARCH_AGENT_PRICE || "110000", // 0.11 USDC
   name: "Research Assistant",
   description: "AI-powered research for topic exploration, market research, competitive analysis, and information gathering.",
   network: "avalanche-fuji",
