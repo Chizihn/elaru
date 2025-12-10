@@ -3,12 +3,13 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@apollo/client/react";
 import { gql } from "@apollo/client";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Search,
   Filter,
@@ -21,9 +22,14 @@ import {
   ChevronDown,
   Users,
   Sparkles,
+  Workflow,
+  X,
+  ArrowRight,
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { formatEther } from "ethers";
+import { useWorkflowStore, WorkflowAgent, formatWorkflowPrice } from "@/lib/workflow-store";
 
 const GET_ALL_AGENTS = gql`
   query GetAgents {
@@ -78,11 +84,24 @@ const PRICE_RANGES = [
 ];
 
 export default function BrowseAgentsPage() {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedServiceType, setSelectedServiceType] = useState("All");
   const [selectedPriceRange, setSelectedPriceRange] = useState(PRICE_RANGES[0]);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [showFilters, setShowFilters] = useState(false);
+
+  // Workflow store
+  const {
+    selectedAgents,
+    isWorkflowMode,
+    addAgent,
+    removeAgent,
+    clearWorkflow,
+    toggleWorkflowMode,
+    isAgentSelected,
+    getTotalCost,
+  } = useWorkflowStore();
 
   const { data, loading, error } = useQuery<{ getAgents: Agent[] }>(GET_ALL_AGENTS);
 
@@ -194,6 +213,16 @@ export default function BrowseAgentsPage() {
                 <List className="h-5 w-5" />
               </Button>
             </div>
+
+            {/* Workflow Mode Toggle */}
+            <Button
+              variant={isWorkflowMode ? "default" : "outline"}
+              className={`h-14 px-6 ${isWorkflowMode ? "bg-green-500 hover:bg-green-600" : ""}`}
+              onClick={toggleWorkflowMode}
+            >
+              <Workflow className="mr-2 h-5 w-5" />
+              {isWorkflowMode ? "Building Workflow" : "Build Workflow"}
+            </Button>
           </div>
 
           {/* Expanded Filters */}
@@ -301,59 +330,136 @@ export default function BrowseAgentsPage() {
               viewMode === "grid" ? "md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"
             }`}
           >
-            {filteredAgents.map((agent, idx) => (
-              <motion.div
-                key={agent.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.05 }}
-              >
-                <Link href={`/agent/${agent.id}`}>
-                  <Card className="h-full border-border hover:border-primary/50 transition-all cursor-pointer group">
-                    <CardHeader className="pb-3">
-                      <div className="flex items-start justify-between">
-                        <div className="space-y-1">
-                          <CardTitle className="text-lg group-hover:text-primary transition-colors">
-                            {agent.name || agent.serviceType}
-                          </CardTitle>
-                          <Badge variant="secondary" className="text-xs">
-                            {agent.serviceType}
-                          </Badge>
-                        </div>
-                        <div className="flex items-center gap-1 px-2 py-1 bg-green-500/10 text-green-500 rounded-full text-sm font-semibold">
-                          <Shield className="h-3 w-3" />
-                          {agent.reputationScore?.toFixed(1) || "0.0"}
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <p className="text-sm text-muted-foreground line-clamp-2">
-                        {agent.description || "No description available."}
-                      </p>
+            {filteredAgents.map((agent, idx) => {
+              const isSelected = isAgentSelected(agent.id);
+              const workflowAgent: WorkflowAgent = {
+                id: agent.id,
+                name: agent.name,
+                serviceType: agent.serviceType,
+                description: agent.description,
+                endpoint: agent.endpoint,
+                walletAddress: agent.walletAddress,
+                reputationScore: agent.reputationScore,
+                pricePerRequest: agent.pricePerRequest,
+                stakedAmount: agent.stakedAmount,
+              };
 
-                      <div className="flex items-center justify-between text-sm">
-                        <div className="flex items-center gap-1 text-muted-foreground">
-                          <DollarSign className="h-4 w-4" />
-                          <span className="font-medium">{formatPrice(agent.pricePerRequest)}</span>
-                          <span>/request</span>
-                        </div>
-                        <div className="flex items-center gap-1 text-muted-foreground">
-                          <Zap className="h-4 w-4" />
-                          <span>{formatStake(agent.stakedAmount)} staked</span>
-                        </div>
-                      </div>
+              const handleCardClick = (e: React.MouseEvent) => {
+                if (isWorkflowMode) {
+                  e.preventDefault();
+                  if (isSelected) {
+                    removeAgent(agent.id);
+                  } else {
+                    addAgent(workflowAgent);
+                  }
+                }
+              };
 
-                      <div className="flex items-center justify-between pt-2 border-t border-border">
-                        <span className="text-xs text-muted-foreground font-mono">
-                          {agent.walletAddress?.slice(0, 6)}...{agent.walletAddress?.slice(-4)}
-                        </span>
-                        <ExternalLink className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
-              </motion.div>
-            ))}
+              return (
+                <motion.div
+                  key={agent.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx * 0.05 }}
+                >
+                  <div onClick={handleCardClick}>
+                    {isWorkflowMode ? (
+                      <Card 
+                        className={`h-full border-2 transition-all cursor-pointer group ${
+                          isSelected 
+                            ? "border-green-500 bg-green-500/5" 
+                            : "border-border hover:border-primary/50"
+                        }`}
+                      >
+                        <CardHeader className="pb-3">
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-center gap-3">
+                              <Checkbox
+                                checked={isSelected}
+                                className={`h-5 w-5 ${isSelected ? "bg-green-500 border-green-500" : ""}`}
+                              />
+                              <div className="space-y-1">
+                                <CardTitle className="text-lg group-hover:text-primary transition-colors">
+                                  {agent.name || agent.serviceType}
+                                </CardTitle>
+                                <Badge variant="secondary" className="text-xs">
+                                  {agent.serviceType}
+                                </Badge>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1 px-2 py-1 bg-green-500/10 text-green-500 rounded-full text-sm font-semibold">
+                              <Shield className="h-3 w-3" />
+                              {agent.reputationScore?.toFixed(1) || "0.0"}
+                            </div>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <p className="text-sm text-muted-foreground line-clamp-2">
+                            {agent.description || "No description available."}
+                          </p>
+
+                          <div className="flex items-center justify-between text-sm">
+                            <div className="flex items-center gap-1 text-muted-foreground">
+                              <DollarSign className="h-4 w-4" />
+                              <span className="font-medium">{formatPrice(agent.pricePerRequest)}</span>
+                              <span>/request</span>
+                            </div>
+                            {isSelected && (
+                              <Badge className="bg-green-500">Added to Workflow</Badge>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ) : (
+                      <Link href={`/agent/${agent.id}`}>
+                        <Card className="h-full border-border hover:border-primary/50 transition-all cursor-pointer group">
+                          <CardHeader className="pb-3">
+                            <div className="flex items-start justify-between">
+                              <div className="space-y-1">
+                                <CardTitle className="text-lg group-hover:text-primary transition-colors">
+                                  {agent.name || agent.serviceType}
+                                </CardTitle>
+                                <Badge variant="secondary" className="text-xs">
+                                  {agent.serviceType}
+                                </Badge>
+                              </div>
+                              <div className="flex items-center gap-1 px-2 py-1 bg-green-500/10 text-green-500 rounded-full text-sm font-semibold">
+                                <Shield className="h-3 w-3" />
+                                {agent.reputationScore?.toFixed(1) || "0.0"}
+                              </div>
+                            </div>
+                          </CardHeader>
+                          <CardContent className="space-y-4">
+                            <p className="text-sm text-muted-foreground line-clamp-2">
+                              {agent.description || "No description available."}
+                            </p>
+
+                            <div className="flex items-center justify-between text-sm">
+                              <div className="flex items-center gap-1 text-muted-foreground">
+                                <DollarSign className="h-4 w-4" />
+                                <span className="font-medium">{formatPrice(agent.pricePerRequest)}</span>
+                                <span>/request</span>
+                              </div>
+                              <div className="flex items-center gap-1 text-muted-foreground">
+                                <Zap className="h-4 w-4" />
+                                <span>{formatStake(agent.stakedAmount)} staked</span>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center justify-between pt-2 border-t border-border">
+                              <span className="text-xs text-muted-foreground font-mono">
+                                {agent.walletAddress?.slice(0, 6)}...{agent.walletAddress?.slice(-4)}
+                              </span>
+                              <ExternalLink className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </Link>
+                    )}
+                  </div>
+                </motion.div>
+              );
+            })}
           </div>
         )}
 
@@ -395,6 +501,57 @@ export default function BrowseAgentsPage() {
           </Card>
         )}
       </div>
+
+      {/* Floating Workflow Action Bar */}
+      <AnimatePresence>
+        {selectedAgents.length > 0 && (
+          <motion.div
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50"
+          >
+            <Card className="border-2 border-green-500 bg-card/95 backdrop-blur-lg shadow-2xl">
+              <CardContent className="p-4 flex items-center gap-6">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-lg bg-green-500/20 flex items-center justify-center">
+                    <Workflow className="h-5 w-5 text-green-500" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-sm">
+                      {selectedAgents.length} Agent{selectedAgents.length > 1 ? "s" : ""} Selected
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Total: {formatWorkflowPrice(getTotalCost())}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={clearWorkflow}
+                    className="text-muted-foreground hover:text-destructive"
+                  >
+                    <X className="h-4 w-4 mr-1" />
+                    Clear
+                  </Button>
+                  <Button
+                    variant="default"
+                    size="sm"
+                    className="bg-green-500 hover:bg-green-600"
+                    onClick={() => router.push("/workflow")}
+                  >
+                    Build Workflow
+                    <ArrowRight className="h-4 w-4 ml-1" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

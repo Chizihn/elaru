@@ -102,29 +102,29 @@ export default function OperatorDashboard() {
             Manage your AI agents, view earnings and tasks history.
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 w-full md:w-auto">
           <Link href="/history">
-            <Button variant="neon" className="shadow-sm">
-              <History className="mr-2 h-4 w-4" /> Task History
+            <Button variant="neon" className="shadow-sm text-xs sm:text-sm">
+              <History className="mr-1 sm:mr-2 h-4 w-4" /> Task History
             </Button>
           </Link>
           {agents.length > 0 && (
             <Link href="/edit-agent">
-              <Button variant="link" className="shadow-sm">
-                <Pencil className="mr-2 h-4 w-4" /> Edit Agent
+              <Button variant="link" className="shadow-sm text-xs sm:text-sm">
+                <Pencil className="mr-1 sm:mr-2 h-4 w-4" /> Edit Agent
               </Button>
             </Link>
           )}
           <Link href="/register-agent">
-            <Button variant="default" className="shadow-lg shadow-primary/20">
-              <Plus className="mr-2 h-4 w-4" /> Register New Agent
+            <Button variant="default" className="shadow-lg shadow-primary/20 text-xs sm:text-sm">
+              <Plus className="mr-1 sm:mr-2 h-4 w-4" /> Register New Agent
             </Button>
           </Link>
         </div>
       </div>
 
       {/* Analytics Overview */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
         <Card className="border-border shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
@@ -244,24 +244,24 @@ export default function OperatorDashboard() {
                 <motion.div
                   key={agent.id}
                   variants={itemVariants}
-                  className="flex items-center justify-between border-b border-border/50 pb-4 last:border-0 last:pb-0 hover:bg-muted/20 p-2 rounded-lg transition-colors"
+                  className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-border/50 pb-4 last:border-0 last:pb-0 hover:bg-muted/20 p-2 rounded-lg transition-colors gap-3"
                 >
-                  <div className="flex items-center gap-4">
-                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                  <div className="flex items-center gap-3 sm:gap-4">
+                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                       <BarChart3 className="h-5 w-5 text-primary" />
                     </div>
-                    <div className="space-y-1">
-                      <p className="font-medium leading-none">
+                    <div className="space-y-1 min-w-0">
+                      <p className="font-medium leading-none truncate">
                         {agent.name || agent.serviceType}
                       </p>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <Badge
                           variant="outline"
                           className="text-[10px] px-1 py-0 h-4 border-primary/20 text-primary/80"
                         >
                           {agent.serviceType}
                         </Badge>
-                        <p className="text-sm text-muted-foreground font-mono">
+                        <p className="text-xs sm:text-sm text-muted-foreground font-mono">
                           {agent.walletAddress.substring(0, 6)}...
                           {agent.walletAddress.substring(
                             agent.walletAddress.length - 4
@@ -270,9 +270,9 @@ export default function OperatorDashboard() {
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-4">
-                    <div className="text-right hidden sm:block">
-                      <p className="text-sm font-medium">
+                  <div className="flex items-center gap-2 sm:gap-4 ml-[52px] sm:ml-0">
+                    <div className="text-left sm:text-right">
+                      <p className="text-xs sm:text-sm font-medium">
                         {(parseInt(agent.pricePerRequest) / 1000000).toFixed(2)}{" "}
                         USDC
                       </p>
@@ -289,7 +289,7 @@ export default function OperatorDashboard() {
                       {agent.active ? "Active" : "Inactive"}
                     </Badge>
                     <Link href={`/agent/${agent.id}`}>
-                      <Button variant="outline" size="sm">
+                      <Button variant="outline" size="sm" className="text-xs sm:text-sm">
                         Manage
                       </Button>
                     </Link>

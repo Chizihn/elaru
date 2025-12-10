@@ -17,7 +17,9 @@ Next.js 14 application with real-time trust scores, USDC payments, and agent ana
 frontend/
 ├── app/
 │   ├── page.tsx                    # Landing page with leaderboard
-│   ├── discover/                   # External agent discovery (Reap)
+│   ├── autonomous/                 # Autonomous agent demo
+│   ├── workflow/                   # 🆕 Multi-agent workflow builder
+│   ├── agents/                     # Agent discovery with workflow mode
 │   ├── proof/                      # Live slashing dashboard
 │   ├── widget/                     # Embeddable widget docs
 │   ├── history/                    # Task history
@@ -32,14 +34,23 @@ frontend/
 │   ├── PayButton.tsx               # Real USDC payment button
 │   ├── TrustLeaderboard.tsx        # Live agent rankings
 │   ├── StakeBadge.tsx              # Agent stake display
+│   ├── StakeManagement.tsx         # 🆕 Add/withdraw stake UI
 │   ├── ComparisonSection.tsx       # Traditional AI vs Elaru
+│   ├── AgentWallet/                # Autonomous wallet components
+│   │   ├── AgentWalletPanel.tsx    # Wallet creation/management
+│   │   ├── BudgetAuthorization.tsx # Budget funding UI
+│   │   └── AutonomousPaymentStatus.tsx # Payment status display
 │   ├── DisputeModal.tsx            # Dispute submission
 │   ├── ReviewModal.tsx             # Review submission
 │   ├── ServiceSelectionModal.tsx   # Service type selection
 │   └── ui/                         # Shadcn UI components
 ├── lib/
+│   ├── agent-wallet.ts             # Agent wallet management
+│   ├── agent-payment.ts            # Autonomous payment wrapper
+│   ├── workflow-store.ts           # 🆕 Zustand workflow state
 │   ├── payments.ts                 # USDC payment utilities
 │   ├── usdc.ts                     # USDC contract config
+│   ├── wagmi.ts                    # Wallet config (Core, MetaMask, etc.)
 │   └── apollo-client.ts            # GraphQL client
 └── hooks/
     └── useAuth.ts                  # Wallet authentication
@@ -78,19 +89,21 @@ Visit http://localhost:3000
 | Route | Description |
 |-------|-------------|
 | `/` | Homepage with hero, comparison, leaderboard |
-| `/discover` | External agent discovery via Reap Protocol |
 | `/proof` | Live slashing dashboard |
 | `/reputation` | Agent explorer and rankings |
 | `/dashboard` | Operator dashboard |
 | `/history` | Task history |
+| `/workflow` | 🆕 Multi-agent workflow builder |
+| `/autonomous` | Autonomous agent commerce demo |
 
 ### Agent Pages
 
 | Route | Description |
 |-------|-------------|
+| `/agents` | Browse all agents (+ workflow mode) |
 | `/agent/[id]` | Agent profile page |
 | `/register-agent` | Register new agent |
-| `/chat` | Chat interface |
+| `/chat/[agentId]` | Chat interface |
 
 ### Documentation
 

@@ -1,0 +1,272 @@
+/**
+ * Autonomous Agent Wallet System
+ * 
+ * This module enables agent-to-agent commerce by creating dedicated wallets
+ * that can sign payments automatically without user intervention.
+ * 
+ * Key features:
+ * - Generate local agent wallets with private key encryption
+ * - Store encrypted wallet in localStorage (encrypted with user's connected wallet address)
+ * - Enable autonomous x402 payments from the agent wallet
+ * - Track budget and spending limits
+ */
+
+import { createThirdwebClient } from "thirdweb";
+import { privateKeyToAccount } from "thirdweb/wallets";
+import { avalancheFuji } from "thirdweb/chains";
+import { getContract, readContract } from "thirdweb";
+
+// Constants
+const AGENT_WALLET_KEY = "elaru_agent_wallet";
+const AGENT_WALLET_CREATED_KEY = "elaru_agent_wallet_created";
+const USDC_FUJI_ADDRESS = "0x5425890298aed601595a70AB815c96711a31Bc65" as `0x${string}`;
+const AVALANCHE_FUJI_CHAIN_ID = 43113;
+
+// Simple XOR encryption using user's wallet address as key
+// Note: This is for demo purposes. Production should use Web Crypto API
+function simpleEncrypt(text: string, password: string): string {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(text);
+  const key = encoder.encode(password.padEnd(32, "0").slice(0, 32));
+  
+  const encrypted = new Uint8Array(data.length);
+  for (let i = 0; i < data.length; i++) {
+    encrypted[i] = data[i] ^ key[i % key.length];
+  }
+  
+  return btoa(String.fromCharCode(...encrypted));
+}
+
+function simpleDecrypt(encryptedText: string, password: string): string {
+  const encoder = new TextEncoder();
+  const key = encoder.encode(password.padEnd(32, "0").slice(0, 32));
+  
+  const encrypted = Uint8Array.from(atob(encryptedText), c => c.charCodeAt(0));
+  const decrypted = new Uint8Array(encrypted.length);
+  
+  for (let i = 0; i < encrypted.length; i++) {
+    decrypted[i] = encrypted[i] ^ key[i % key.length];
+  }
+  
+  return new TextDecoder().decode(decrypted);
+}
+
+/**
+ * Generate a random private key for the agent wallet
+ */
+function generatePrivateKey(): string {
+  const array = new Uint8Array(32);
+  crypto.getRandomValues(array);
+  return "0x" + Array.from(array).map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+// Type definitions
+export interface AgentWalletData {
+  address: string;
+  encryptedPrivateKey: string;
+  createdAt: number;
+  label?: string;
+}
+
+export interface AgentWallet {
+  address: string;
+  privateKey: string;
+  createdAt: number;
+  label?: string;
+}
+
+export interface AgentWalletBalance {
+  usdc: bigint;
+  formattedUSDC: string;
+}
+
+/**
+ * Check if an agent wallet exists in storage
+ */
+export function hasAgentWallet(): boolean {
+  if (typeof window === "undefined") return false;
+  return localStorage.getItem(AGENT_WALLET_KEY) !== null;
+}
+
+/**
+ * Create a new agent wallet
+ * Uses the user's main wallet address as the encryption key
+ */
+export async function createAgentWallet(
+  userAddress: string,
+  client: ReturnType<typeof createThirdwebClient>,
+  label?: string
+): Promise<AgentWallet> {
+  const privateKey = generatePrivateKey();
+  
+  // Get the address from the private key using thirdweb
+  const account = privateKeyToAccount({ 
+    client, 
+    privateKey: privateKey as `0x${string}` 
+  });
+  const address = account.address;
+  
+  // Encrypt private key using user's address as password
+  const encryptedPrivateKey = simpleEncrypt(privateKey, userAddress.toLowerCase());
+  
+  const walletData: AgentWalletData = {
+    address,
+    encryptedPrivateKey,
+    createdAt: Date.now(),
+    label: label || "Autonomous Agent Wallet",
+  };
+  
+  // Store in localStorage
+  localStorage.setItem(AGENT_WALLET_KEY, JSON.stringify(walletData));
+  localStorage.setItem(AGENT_WALLET_CREATED_KEY, "true");
+  
+  console.log("✅ Created new agent wallet:", address);
+  
+  return {
+    address,
+    privateKey,
+    createdAt: walletData.createdAt,
+    label: walletData.label,
+  };
+}
+
+/**
+ * Load existing agent wallet from storage
+ * Decrypts the private key using user's wallet address
+ */
+export function loadAgentWallet(userAddress: string): AgentWallet | null {
+  if (typeof window === "undefined") return null;
+  
+  const stored = localStorage.getItem(AGENT_WALLET_KEY);
+  if (!stored) return null;
+  
+  try {
+    const walletData: AgentWalletData = JSON.parse(stored);
+    const privateKey = simpleDecrypt(walletData.encryptedPrivateKey, userAddress.toLowerCase());
+    
+    // Verify the decrypted key is valid (starts with 0x and is 66 chars)
+    if (!privateKey.startsWith("0x") || privateKey.length !== 66) {
+      console.error("Failed to decrypt agent wallet - invalid key format");
+      return null;
+    }
+    
+    return {
+      address: walletData.address,
+      privateKey,
+      createdAt: walletData.createdAt,
+      label: walletData.label,
+    };
+  } catch (error) {
+    console.error("Failed to load agent wallet:", error);
+    return null;
+  }
+}
+
+/**
+ * Get agent wallet address only (no decryption needed)
+ */
+export function getAgentWalletAddress(): string | null {
+  if (typeof window === "undefined") return null;
+  
+  const stored = localStorage.getItem(AGENT_WALLET_KEY);
+  if (!stored) return null;
+  
+  try {
+    const walletData: AgentWalletData = JSON.parse(stored);
+    return walletData.address;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Delete agent wallet from storage
+ */
+export function deleteAgentWallet(): void {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem(AGENT_WALLET_KEY);
+  localStorage.removeItem(AGENT_WALLET_CREATED_KEY);
+  console.log("🗑️ Agent wallet deleted");
+}
+
+/**
+ * Create a thirdweb account from the agent wallet's private key
+ * This account can sign transactions automatically
+ */
+export function createAgentAccount(
+  agentWallet: AgentWallet,
+  client: ReturnType<typeof createThirdwebClient>
+) {
+  return privateKeyToAccount({
+    client,
+    privateKey: agentWallet.privateKey as `0x${string}`,
+  });
+}
+
+/**
+ * Get USDC balance for an address
+ */
+export async function getUSDCBalance(
+  address: string,
+  client: ReturnType<typeof createThirdwebClient>
+): Promise<bigint> {
+  try {
+    const contract = getContract({
+      client,
+      chain: avalancheFuji,
+      address: USDC_FUJI_ADDRESS,
+    });
+
+    const balance = await readContract({
+      contract,
+      method: "function balanceOf(address account) view returns (uint256)",
+      params: [address as `0x${string}`],
+    });
+
+    return balance;
+  } catch (error) {
+    console.error("Failed to get USDC balance:", error);
+    return BigInt(0);
+  }
+}
+
+/**
+ * Format USDC balance for display (6 decimals)
+ */
+export function formatUSDCBalance(balance: bigint): string {
+  const dollars = Number(balance) / 1_000_000;
+  return `$${dollars.toFixed(2)}`;
+}
+
+/**
+ * Format USDC amount in smallest units to display
+ */
+export function formatUSDCAmount(amount: number): string {
+  const dollars = amount / 1_000_000;
+  return `$${dollars.toFixed(2)}`;
+}
+
+/**
+ * Check if agent wallet has sufficient balance for a payment
+ */
+export async function hassufficientBalance(
+  agentWallet: AgentWallet,
+  requiredAmount: bigint,
+  client: ReturnType<typeof createThirdwebClient>
+): Promise<boolean> {
+  const balance = await getUSDCBalance(agentWallet.address, client);
+  return balance >= requiredAmount;
+}
+
+/**
+ * Export agent wallet private key (for backup)
+ * WARNING: Handle with care!
+ */
+export function exportAgentWallet(userAddress: string): string | null {
+  const wallet = loadAgentWallet(userAddress);
+  if (!wallet) return null;
+  return wallet.privateKey;
+}
+
+// Export constants for other modules
+export { USDC_FUJI_ADDRESS, AVALANCHE_FUJI_CHAIN_ID };

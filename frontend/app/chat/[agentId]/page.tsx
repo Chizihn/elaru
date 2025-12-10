@@ -1,13 +1,16 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { createThirdwebClient } from "thirdweb";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { PayButton } from "@/components/PayButton";
 import { ReviewModal } from "@/components/ReviewModal";
 import { ChatHistory, HistoryTask } from "@/components/ChatHistory";
+import { AgentWalletPanel, AutonomousPaymentStatus, AutonomousPayment } from "@/components/AgentWallet";
 import { useQuery, useMutation } from "@apollo/client/react";
 import {
   Send,
@@ -21,6 +24,8 @@ import {
   Sparkles,
   Lock,
   History,
+  Wallet,
+  Loader2,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { motion, AnimatePresence } from "framer-motion";
@@ -31,6 +36,19 @@ import { GET_AGENT_DETAILS } from "@/graphql/queries/agents";
 import { RECORD_AGENT_INTERACTION } from "@/graphql/mutations/agents";
 import { MessageActions } from "@/components/MessageActions";
 import { ArtifactRenderer } from "@/components/ArtifactRenderer";
+import {
+  AgentWallet,
+  loadAgentWallet,
+  getUSDCBalance,
+  formatUSDCBalance,
+} from "@/lib/agent-wallet";
+import { createAutonomousFetch, AutonomousPaymentConfig } from "@/lib/agent-payment";
+import { toast } from "sonner";
+
+// Create thirdweb client
+const thirdwebClient = createThirdwebClient({
+  clientId: process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID || "",
+});
 
 interface Message {
   id: string;
@@ -77,6 +95,13 @@ export default function ChatPage() {
   const [showHistory, setShowHistory] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // Autonomous mode state
+  const [autonomousMode, setAutonomousMode] = useState(false);
+  const [agentWallet, setAgentWallet] = useState<AgentWallet | null>(null);
+  const [agentBalance, setAgentBalance] = useState<bigint>(BigInt(0));
+  const [autonomousPayments, setAutonomousPayments] = useState<AutonomousPayment[]>([]);
+  const [isAutonomousSending, setIsAutonomousSending] = useState(false);
+
   const { data, loading } = useQuery<{ getAgent: Agent }>(GET_AGENT_DETAILS, {
     variables: { id: agentId, walletAddress: address },
     skip: !agentId,
@@ -91,6 +116,157 @@ export default function ChatPage() {
       scrollRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages]);
+
+  // Load agent wallet when address changes
+  useEffect(() => {
+    if (address) {
+      const wallet = loadAgentWallet(address);
+      if (wallet) {
+        setAgentWallet(wallet);
+      }
+    }
+  }, [address]);
+
+  // Fetch agent wallet balance periodically
+  useEffect(() => {
+    if (!agentWallet) return;
+
+    const fetchBalance = async () => {
+      const balance = await getUSDCBalance(agentWallet.address, thirdwebClient);
+      setAgentBalance(balance);
+    };
+
+    fetchBalance();
+    const interval = setInterval(fetchBalance, 10000);
+    return () => clearInterval(interval);
+  }, [agentWallet]);
+
+  // Handle wallet ready from panel
+  const handleAgentWalletReady = useCallback((wallet: AgentWallet) => {
+    setAgentWallet(wallet);
+  }, []);
+
+  // Autonomous send handler
+  const handleAutonomousSend = async () => {
+    if (!input.trim() || !agent || !agentWallet || isAutonomousSending) return;
+
+    // Check balance
+    if (agentBalance < BigInt(agent.pricePerRequest)) {
+      toast.error("Insufficient agent wallet balance", {
+        description: `Need ${formatUSDCBalance(BigInt(agent.pricePerRequest))}, have ${formatUSDCBalance(agentBalance)}`,
+      });
+      return;
+    }
+
+    setIsAutonomousSending(true);
+    const paymentId = `${Date.now()}-${agent.id}`;
+    const userContent = input.trim();
+    setInput("");
+
+    // Add user message immediately
+    const userMsg: Message = {
+      id: Date.now().toString(),
+      role: "user",
+      content: userContent,
+      timestamp: Date.now(),
+    };
+    setMessages((prev) => [...prev, userMsg]);
+
+    // Add pending payment
+    setAutonomousPayments((prev) => [
+      ...prev,
+      {
+        id: paymentId,
+        targetAgent: agent.id,
+        targetAgentName: agent.name || agent.serviceType,
+        amount: parseInt(agent.pricePerRequest),
+        status: "pending",
+        timestamp: new Date(),
+      },
+    ]);
+
+    try {
+      const config: AutonomousPaymentConfig = {
+        agentWallet,
+        client: thirdwebClient,
+        maxPaymentPerRequest: BigInt(agent.pricePerRequest),
+      };
+
+      const fetchWithPay = createAutonomousFetch(config);
+
+      const response = await fetchWithPay(agent.endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-agent-id": agent.id,
+        },
+        body: JSON.stringify({ description: userContent }),
+      });
+
+      const data = await response.json();
+
+      if (response.status === 200 && data.result) {
+        // Update payment status
+        setAutonomousPayments((prev) =>
+          prev.map((p) =>
+            p.id === paymentId
+              ? { ...p, status: "success" as const, txHash: data.txHash }
+              : p
+          )
+        );
+
+        // Add assistant message
+        const assistantMsg: Message = {
+          id: (Date.now() + 1).toString(),
+          role: "assistant",
+          content: data.result,
+          timestamp: Date.now() + 1,
+          relatedTxHash: data.txHash,
+        };
+        setMessages((prev) => [...prev, assistantMsg]);
+
+        // Record interaction
+        try {
+          await recordInteraction({
+            variables: {
+              agentId: agent.id,
+              description: userContent,
+              txHash: data.txHash || "autonomous-payment",
+              result: data.result,
+            },
+            refetchQueries: ["GetUserTasks"],
+            awaitRefetchQueries: true,
+          });
+        } catch (err) {
+          console.error("Failed to record interaction:", err);
+        }
+
+        toast.success("Autonomous payment successful!", {
+          description: `Paid ${formatUSDCBalance(BigInt(agent.pricePerRequest))} to ${agent.name || agent.serviceType}`,
+        });
+      } else {
+        setAutonomousPayments((prev) =>
+          prev.map((p) =>
+            p.id === paymentId ? { ...p, status: "error" as const } : p
+          )
+        );
+        toast.error("Request failed", {
+          description: data.error || "Unknown error",
+        });
+      }
+    } catch (error) {
+      setAutonomousPayments((prev) =>
+        prev.map((p) =>
+          p.id === paymentId ? { ...p, status: "error" as const } : p
+        )
+      );
+      toast.error("Autonomous payment failed", {
+        description: error instanceof Error ? error.message : "Unknown error",
+      });
+    } finally {
+      setIsAutonomousSending(false);
+    }
+  };
 
   const handlePaymentSuccess = async (
     txHash: string,
@@ -181,7 +357,7 @@ export default function ChatPage() {
     // top-16 accounts for the h-16 (4rem) Navbar
     <div className="fixed inset-x-0 bottom-0 top-16 flex w-full bg-background text-foreground font-sans overflow-hidden">
       {/* Sidebar (Desktop) - Static, no scroll unless content overflows */}
-      <div className="hidden md:flex w-80 flex-none flex-col border-r border-border bg-card/30 backdrop-blur-xl p-6 space-y-6 z-20 overflow-y-auto">
+      <div className="hidden md:flex w-80 flex-none flex-col border-r border-border bg-card/30 backdrop-blur-xl p-6 space-y-6 z-20 overflow-y-auto custom-scrollbar">
         <Link href={`/agent/${agentId}`}>
           <Button
             variant="ghost"
@@ -281,6 +457,53 @@ export default function ChatPage() {
                 </div>
               </div>
             </div>
+
+            {/* Autonomous Mode Toggle */}
+            <div className="p-4 rounded-xl bg-card border border-border">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Wallet className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-medium text-foreground">
+                    Autonomous Mode
+                  </span>
+                </div>
+                <Switch
+                  checked={autonomousMode}
+                  onCheckedChange={setAutonomousMode}
+                  disabled={!agentWallet || agentBalance === BigInt(0)}
+                />
+              </div>
+              {autonomousMode ? (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">Agent Wallet</span>
+                    <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/30">
+                      {formatUSDCBalance(agentBalance)}
+                    </Badge>
+                  </div>
+                  <p className="text-[10px] text-green-500">
+                    ✓ Payments are automatic — no popups!
+                  </p>
+                </div>
+              ) : (
+                <p className="text-[10px] text-muted-foreground">
+                  {agentWallet ? "Enable to pay automatically from agent wallet" : "Create agent wallet to enable"}
+                </p>
+              )}
+            </div>
+
+            {/* Agent Wallet Panel (collapsed) */}
+            {!agentWallet && (
+              <AgentWalletPanel
+                userAddress={address || ""}
+                onWalletReady={handleAgentWalletReady}
+                onWalletDeleted={() => {
+                  setAgentWallet(null);
+                  setAgentBalance(BigInt(0));
+                  setAutonomousMode(false);
+                }}
+              />
+            )}
           </motion.div>
         ) : (
           <div className="text-red-400 text-sm">Agent not found</div>
@@ -462,42 +685,81 @@ export default function ChatPage() {
         {/* Input Area (Static Footer) - Fixed at bottom of flex column */}
         <div className="flex-none p-4 md:p-6 border-t border-border bg-background/80 backdrop-blur-xl z-20">
           <div className="max-w-5xl mx-auto">
+            {/* Autonomous Payment Status */}
+            {autonomousMode && autonomousPayments.length > 0 && (
+              <div className="mb-4">
+                <AutonomousPaymentStatus
+                  payments={autonomousPayments}
+                  isProcessing={isAutonomousSending}
+                />
+              </div>
+            )}
+
             <div className="flex gap-3 items-end mb-3">
               <div className="relative flex-1 w-full">
                 <Input
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  placeholder="Type your message..."
+                  placeholder={autonomousMode ? "Type your message (auto-pay enabled)..." : "Type your message..."}
                   className="w-full min-h-14 py-4 px-5 bg-card border-border focus-visible:ring-2 focus-visible:ring-primary focus-visible:border-transparent text-foreground placeholder:text-muted-foreground rounded-xl shadow-sm"
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && !e.shiftKey && input.trim()) {
                       e.preventDefault();
+                      if (autonomousMode) {
+                        handleAutonomousSend();
+                      }
+                      // For manual mode, PayButton handles submit
                     }
                   }}
                 />
               </div>
 
               {agent && (
-                <PayButton
-                  agentId={agent.id}
-                  amount={agent.pricePerRequest}
-                  endpoint={agent.endpoint}
-                  taskDescription={input}
-                  onPaymentSuccess={handlePaymentSuccess}
-                  className="h-14 w-14 p-0 rounded-xl bg-primary hover:bg-primary/90 transition-all shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:scale-105 disabled:opacity-50 disabled:hover:scale-100 text-primary-foreground"
-                  disabled={!input.trim()}
-                  hideWrapper
-                >
-                  <Send className="h-5 w-5" />
-                </PayButton>
+                autonomousMode ? (
+                  <Button
+                    onClick={handleAutonomousSend}
+                    disabled={!input.trim() || isAutonomousSending || agentBalance < BigInt(agent.pricePerRequest)}
+                    className="h-14 w-14 p-0 rounded-xl bg-green-500 hover:bg-green-600 transition-all shadow-lg shadow-green-500/25 hover:shadow-green-500/40 hover:scale-105 disabled:opacity-50 disabled:hover:scale-100 text-white"
+                  >
+                    {isAutonomousSending ? (
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                    ) : (
+                      <Send className="h-5 w-5" />
+                    )}
+                  </Button>
+                ) : (
+                  <PayButton
+                    agentId={agent.id}
+                    amount={agent.pricePerRequest}
+                    endpoint={agent.endpoint}
+                    taskDescription={input}
+                    onPaymentSuccess={handlePaymentSuccess}
+                    className="h-14 w-14 p-0 rounded-xl bg-primary hover:bg-primary/90 transition-all shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:scale-105 disabled:opacity-50 disabled:hover:scale-100 text-primary-foreground"
+                    disabled={!input.trim()}
+                    hideWrapper
+                  >
+                    <Send className="h-5 w-5" />
+                  </PayButton>
+                )
               )}
             </div>
 
             <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground font-medium">
-              <Shield className="h-3 w-3" />
-              <span>
-                Secured by Elaru Protocol • Instant settlement on Avalanche Fuji
-              </span>
+              {autonomousMode ? (
+                <>
+                  <Zap className="h-3 w-3 text-green-500" />
+                  <span className="text-green-500">
+                    Autonomous mode • Payments are automatic
+                  </span>
+                </>
+              ) : (
+                <>
+                  <Shield className="h-3 w-3" />
+                  <span>
+                    Secured by Elaru Protocol • Instant settlement on Avalanche Fuji
+                  </span>
+                </>
+              )}
             </div>
           </div>
         </div>

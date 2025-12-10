@@ -132,7 +132,7 @@ export default function ReputationExplorer() {
 
   return (
     <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,var(--tw-gradient-stops))] from-slate-900 via-background to-background text-foreground">
-      <div className="container mx-auto py-8 space-y-12 px-4 md:px-6">
+      <div className="container mx-auto py-8 space-y-12 px-4 lg:px-6">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -228,7 +228,7 @@ export default function ReputationExplorer() {
               />
 
               <CardHeader className="relative z-10 pb-6 border-b-3 border-border">
-                <div className="flex items-start justify-between flex-wrap gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                   <div>
                     <CardTitle className="text-3xl flex items-center gap-3 font-black uppercase tracking-tight">
                       <div className="p-3 bg-primary border-3 border-foreground shadow-[4px_4px_0px_0px_rgba(0,0,0,0.3)]">
@@ -240,9 +240,9 @@ export default function ReputationExplorer() {
                       Aggregate reputation score • Updated every 6 hours
                     </CardDescription>
                   </div>
-                  <div className="text-right">
-                    <div className="px-6 py-3 bg-accent text-accent-foreground border-3 border-foreground shadow-[4px_4px_0px_0px_rgba(0,0,0,0.3)] mb-2">
-                      <div className="text-5xl font-black">
+                  <div className="text-left sm:text-right">
+                    <div className="px-4 sm:px-6 py-2 sm:py-3 bg-accent text-accent-foreground border-3 border-foreground shadow-[4px_4px_0px_0px_rgba(0,0,0,0.3)] mb-2 inline-block sm:block">
+                      <div className="text-3xl sm:text-5xl font-black">
                         {currentScore.toFixed(2)}
                       </div>
                     </div>

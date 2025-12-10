@@ -81,10 +81,10 @@ export function ChatHistory({
   return (
     <div className="h-full flex flex-col bg-card/30 backdrop-blur-xl border-l border-border">
       {/* Header */}
-      <div className="p-4 border-b border-border flex items-center justify-between">
-        <div className="flex items-center gap-2">
+      <div className="p-4 border-b border-border flex items-center justify-between ">
+        <div className="flex items-center gap-2 mt-3">
           <History className="h-4 w-4 text-primary" />
-          <h3 className="font-semibold text-sm">Chat History</h3>
+          <h3 className="font-semibold text-sm">History</h3>
         </div>
         <Button
           variant="ghost"

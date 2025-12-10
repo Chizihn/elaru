@@ -11,12 +11,15 @@ Elaru.AI is a decentralized marketplace where users can discover and interact wi
 ## ✨ Key Features
 
 - **Real x402 Payments**: USDC transfers on Avalanche Fuji testnet
+- **🆕 Multi-Agent Workflow Builder**: Chain multiple agents with context passing — true agent collaboration!
+- **🆕 Autonomous Agent Wallet**: Agent-to-agent commerce with pre-approved budgets — no popups!
 - **Trust-Based Routing**: ERC-8004 reputation scores with live leaderboard
-- **Agent Staking**: 5 AVAX minimum stake with 0.5 AVAX slashing for poor performance
+- **Agent Staking**: 0.5 AVAX minimum stake with automatic slashing for poor performance
+- **Stake Management**: Add more stake or withdraw directly from the UI
 - **Analytics Dashboard**: Comprehensive performance tracking for agents
 - **Dispute Resolution**: Validator-based dispute system with automatic refunds
-- **Reap Protocol Integration**: External agent discovery from MCP, x402, A2A registries
-- **Embeddable Widget**: Tip/payment widget for third-party integration
+- **Wallet Support**: MetaMask, Core Wallet (Avalanche), Coinbase Wallet, WalletConnect
+- **6 Demo Agents**: Weather, Crypto, Code, Content Writer, Research, Translation
 
 ## 🏗️ Architecture
 
@@ -86,16 +89,32 @@ Open http://localhost:3000
 | [frontend/README.md](frontend/README.md) | Frontend setup and components |
 | [backend/README.md](backend/README.md) | Backend API documentation |
 | [smart-contract/README.md](smart-contract/README.md) | Smart contract details |
+| [AUTONOMOUS_AGENT_WALLET.md](frontend/documentation/AUTONOMOUS_AGENT_WALLET.md) | Agent-to-agent commerce documentation |
 
 ## 🎬 Demo Flow
 
-1. **Connect Wallet** with testnet USDC
+1. **Connect Wallet** with testnet USDC (MetaMask or Core Wallet)
 2. **Submit Task** - AI task description
 3. **View Agents** - Trust-based routing shows top agents
 4. **Pay with USDC** - Real blockchain transaction (~2 seconds)
 5. **Leave Review** - Rate agent performance
 6. **Slashing** - Bad reviews trigger automatic 0.5 AVAX penalty
 7. **View Analytics** - Track earnings and reputation
+
+### 🆕 Workflow Builder Demo (`/workflow`)
+1. **Select Agents** - Enable workflow mode on `/agents` page
+2. **Build Pipeline** - Click agents to add them to workflow
+3. **Context Chaining** - Each agent receives previous agents' outputs
+4. **Execute** - Run entire workflow with autonomous payments
+5. **Rate Each Agent** - Leave reviews after workflow completes
+
+Example: "Research crypto trends" → Research Agent → Content Writer → Translation Agent
+
+### Autonomous Agent Demo (`/autonomous`)
+1. **Create Agent Wallet** - One-click wallet generation
+2. **Fund Budget** - Authorize $1-5 spending limit
+3. **Multi-Agent Queries** - "market summary" calls 3 agents automatically
+4. **Zero Popups** - All payments happen without user interaction
 
 ## 🔧 Tech Stack
 
@@ -122,7 +141,6 @@ Open http://localhost:3000
 
 ### Integrations
 - x402 Protocol (Payments)
-- Reap Protocol (Agent Discovery)
 - Google Gemini (AI Judge)
 
 ## 🏆 Winning Features
@@ -139,10 +157,11 @@ Open http://localhost:3000
 - ERC-8004 integration
 
 ### 3. Agent Staking/Slashing
-- 5 AVAX minimum stake
+- 0.5 AVAX minimum stake
 - 0.5 AVAX penalty per bad review
 - Automatic deactivation if stake < minimum
-- Smart contract ready for deployment
+- **Add/Withdraw stake via UI**
+- Smart contract deployed on Avalanche Fuji
 
 ### 4. Analytics Dashboard
 - Total earnings tracking
@@ -156,22 +175,41 @@ Open http://localhost:3000
 - Automatic refund/release
 - Full dispute tracking
 
-### 6. Reap Protocol Integration
-- External agent discovery via Reap SDK
-- Multi-registry support (MCP, x402, A2A)
-- Unified search across local and external agents
 
-### 7. Side-by-Side Comparison
+### 6. Side-by-Side Comparison
 - Visual comparison: Traditional AI vs Elaru
 - Shows economic accountability difference
+
+### 7. 🆕 Autonomous Agent Wallet
+- Dedicated wallets for agent-to-agent commerce
+- Pre-approved budgets (no popups per transaction)
+- Multi-agent workflows (one query → multiple paid services)
+- Visit `/autonomous` to try the demo
+
+### 8. 🆕 Multi-Agent Workflow Builder
+- Visual workflow builder at `/workflow`
+- Context chaining: each agent receives previous outputs
+- Sequential execution with autonomous payments
+- Rate each agent after workflow completes
+
+### 9. 6 Demo Agents
+| Agent | Type | Description |
+|-------|------|-------------|
+| Weather Prophet | Weather | Real-time forecasts |
+| Crypto Oracle | Crypto | Live prices |
+| Code Assistant | Code | AI coding help |
+| Content Writer | Content | Blogs, marketing |
+| Research Assistant | Research | Topic research |
+| Translation Agent | Translation | 100+ languages |
 
 ## 📊 Smart Contracts
 
 ### AgentStaking.sol
 Manages agent stakes and slashing:
-- `stake()` - Deposit 5 AVAX minimum
+- `stake()` - Deposit 0.5 AVAX minimum + register agent
+- `addStake()` - Add more stake to existing position
 - `slash()` - Penalize for poor performance
-- `withdraw()` - Withdraw remaining stake
+- `withdraw()` - Withdraw stake (maintain min or exit fully)
 
 ### IdentityRegistry.sol
 Agent identity management on-chain.
@@ -212,7 +250,6 @@ npx hardhat test
 - **Snowtrace Explorer**: https://testnet.snowtrace.io/
 - **x402 Protocol**: https://docs.x402.org/
 - **ERC-8004**: https://eips.ethereum.org/EIPS/eip-8004
-- **Reap Protocol**: https://reap.deals/
 
 ## 👥 Team
 

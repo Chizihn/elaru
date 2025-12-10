@@ -188,7 +188,7 @@ export default function RegisterAgent() {
   };
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,var(--tw-gradient-stops))] from-slate-900 via-background to-background text-foreground py-16 ">
+    <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,var(--tw-gradient-stops))] from-slate-900 via-background to-background text-foreground py-10 lg:py-16 ">
       <div className="container max-w-6xl mx-auto px-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -347,7 +347,7 @@ export default function RegisterAgent() {
                       />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="endpoint">API Endpoint</Label>
                         <Input
@@ -363,6 +363,9 @@ export default function RegisterAgent() {
                           required
                           className="bg-background/50 focus:border-primary/50"
                         />
+                        <p className="text-[10px] text-muted-foreground mt-1">
+                          Need help building this? <a href="https://github.com/Chizihn/elaru/blob/main/docs/DEVELOPER_GUIDE.md" target="_blank" className="text-primary hover:underline">Read the Developer Guide</a>
+                        </p>
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="price">Price (USDC)</Label>

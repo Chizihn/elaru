@@ -9,6 +9,9 @@ import { Router } from "express";
 import { weatherAgentRouter } from "./weather";
 import { codeAgentRouter } from "./code";
 import { cryptoAgentRouter } from "./crypto";
+import { contentAgentRouter } from "./content";
+import { researchAgentRouter } from "./research";
+import { translationAgentRouter } from "./translation";
 
 export const agentsRouter = Router();
 
@@ -16,6 +19,9 @@ export const agentsRouter = Router();
 agentsRouter.use("/weather", weatherAgentRouter);
 agentsRouter.use("/code", codeAgentRouter);
 agentsRouter.use("/crypto", cryptoAgentRouter);
+agentsRouter.use("/content", contentAgentRouter);
+agentsRouter.use("/research", researchAgentRouter);
+agentsRouter.use("/translation", translationAgentRouter);
 
 // Agent discovery endpoint
 agentsRouter.get("/", (req, res) => {
@@ -35,6 +41,21 @@ agentsRouter.get("/", (req, res) => {
         name: "Crypto Oracle",
         endpoint: "/agents/crypto/webhook",
         description: "Real-time cryptocurrency prices and analysis",
+      },
+      {
+        name: "Content Writer",
+        endpoint: "/agents/content/webhook",
+        description: "AI-powered content creation for blogs, marketing, and social media",
+      },
+      {
+        name: "Research Assistant",
+        endpoint: "/agents/research/webhook",
+        description: "Topic exploration, market research, and information gathering",
+      },
+      {
+        name: "Translation Agent",
+        endpoint: "/agents/translation/webhook",
+        description: "Multi-language translation with context awareness",
       },
     ],
   });

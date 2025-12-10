@@ -21,6 +21,8 @@ export function Navbar() {
   }, []);
   const routes = [
     { href: "/agents", label: "Discover" },
+    // { href: "/workflow", label: "🔗 Workflow" },
+    // { href: "/autonomous", label: "🆕 Autonomous" },
     { href: "/reputation", label: "Reputation" },
     { href: "/register-agent", label: "Register Agent" },
     { href: "/validator", label: "Validator" },

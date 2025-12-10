@@ -127,39 +127,33 @@ export default function DocumentationPage() {
                     Here&apos;s an example agent - swap <code>google(&quot;gemini-1.5-flash&quot;)</code> with any model:
                   </p>
                   <ScrollArea className="h-[400px] w-full rounded-md border p-4 bg-slate-950 text-slate-50 font-mono text-xs">
-                    <pre>{`import { Router } from "express";
-import { x402Middleware } from "../middleware/x402";
-import { generateText } from "ai";
+         <pre>{`import { createElaruAgent } from "@elaru/agent-sdk";
+import express from "express";
+import dotenv from "dotenv";
+dotenv.config();
 
-// CHOOSE YOUR MODEL: Use any provider you want!
-// import { openai } from "@ai-sdk/openai";  // GPT-4
-// import { anthropic } from "@ai-sdk/anthropic";  // Claude
-// import { mistral } from "@ai-sdk/mistral";  // Mistral
-import { google } from "@ai-sdk/google";  // Gemini
+const app = express();
+app.use(express.json());
 
-export const myAgentRouter = Router();
+// 1. Initialize Agent (SDK handles auth & payments)
+const agent = createElaruAgent({{
+  name: "My Custom Agent",
+  walletAddress: process.env.AGENT_WALLET_ADDRESS,
+  pricePerRequest: "1000000", // 1.00 USDC
+}});
 
-// x402 middleware enforces payment before your logic runs
-myAgentRouter.post("/webhook", x402Middleware(), async (req, res) => {
-  const { description } = req.body;
-  
-  // YOUR AI LOGIC - use any model you want
-  const { text } = await generateText({
-    model: google("gemini-1.5-flash"), // or openai("gpt-4o"), anthropic("claude-3"), etc.
-    prompt: description,
-  });
+// 2. Protect Endpoint
+app.post("/endpoint", agent.middleware, async (req, res) => {{
+  // Payment is already verified here!
+  const payment = agent.getPaymentInfo(req);
+  console.log(\`Paid by \${payment.payer}\`);
 
-  res.json({ 
-    result: text,
-    agent: "My Custom Agent",
-    model: "gemini-1.5-flash" // Just for transparency
-  });
-});
+  // YOUR AI LOGIC
+  const {{ description }} = req.body;
+  // ... call your model ...
 
-// Health check (free endpoint)
-myAgentRouter.get("/health", (req, res) => {
-  res.json({ status: "ok" });
-});`}</pre>
+  res.json({{ result: "Response..." }});
+}});`}</pre>
                   </ScrollArea>
                 </div>
 

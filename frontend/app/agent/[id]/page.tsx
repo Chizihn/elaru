@@ -26,12 +26,14 @@ import {
   DollarSign,
 } from "lucide-react";
 import { useQuery } from "@apollo/client/react";
-import { LoadingState } from "@/components/ui/state/LoadingState";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ErrorState } from "@/components/ui/state/ErrorState";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useAccount } from "wagmi";
 import { GET_AGENT_DETAILS } from "@/graphql/queries/agents";
+import { StakeManagement } from "@/components/StakeManagement";
+import { parseEther } from "viem";
 
 interface Agent {
   id: string;
@@ -88,7 +90,117 @@ export default function AgentProfile() {
     }
   );
 
-  if (loading) return <LoadingState message="Loading agent details..." />;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,var(--tw-gradient-stops))] from-slate-900 via-background to-background text-foreground py-12">
+        <div className="container max-w-7xl mx-auto px-4 md:px-6">
+          {/* Back Button Skeleton */}
+          <Skeleton className="h-10 w-36 mb-8" />
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Left Column */}
+            <div className="lg:col-span-2 space-y-8">
+              {/* Header Skeleton */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <Skeleton className="h-6 w-24" />
+                  <Skeleton className="h-6 w-20" />
+                </div>
+                <Skeleton className="h-12 w-3/4" />
+                <Skeleton className="h-10 w-full max-w-md rounded-full" />
+              </div>
+
+              {/* Reputation Chart Skeleton */}
+              <Card className="bg-card/30 border-white/10 backdrop-blur-xl shadow-2xl overflow-hidden">
+                <CardHeader>
+                  <Skeleton className="h-6 w-48" />
+                  <Skeleton className="h-4 w-64 mt-2" />
+                </CardHeader>
+                <CardContent className="h-[350px]">
+                  <Skeleton className="h-full w-full" />
+                </CardContent>
+              </Card>
+
+              {/* Validator Attestations Skeleton */}
+              <Card className="bg-card/30 border-white/10 backdrop-blur-xl shadow-2xl">
+                <CardHeader>
+                  <Skeleton className="h-6 w-48" />
+                  <Skeleton className="h-4 w-56 mt-2" />
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-white/5">
+                      <div className="flex items-center gap-3">
+                        <Skeleton className="h-8 w-8 rounded-full" />
+                        <div className="space-y-2">
+                          <Skeleton className="h-4 w-32" />
+                          <Skeleton className="h-3 w-24" />
+                        </div>
+                      </div>
+                      <Skeleton className="h-6 w-16" />
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+
+              {/* Feedback Skeleton */}
+              <Card className="bg-card/30 border-white/10 backdrop-blur-xl shadow-2xl">
+                <CardHeader>
+                  <Skeleton className="h-6 w-40" />
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {[1, 2].map((i) => (
+                    <div key={i} className="space-y-3">
+                      <div className="flex justify-between items-start">
+                        <div className="flex items-center gap-2">
+                          <Skeleton className="h-8 w-8 rounded-full" />
+                          <div className="space-y-1">
+                            <Skeleton className="h-4 w-28" />
+                            <Skeleton className="h-3 w-20" />
+                          </div>
+                        </div>
+                        <Skeleton className="h-5 w-20" />
+                      </div>
+                      <Skeleton className="h-4 w-full ml-10" />
+                      <Separator className="mt-6 bg-white/5" />
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Right Column: Sidebar Skeleton */}
+            <div className="space-y-6 lg:sticky lg:top-24 h-fit">
+              <Card className="bg-card/30 border-white/10 backdrop-blur-xl shadow-2xl overflow-hidden relative">
+                <div className="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-primary via-purple-500 to-blue-500" />
+                <CardHeader>
+                  <Skeleton className="h-6 w-32" />
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="flex justify-between items-center p-3 rounded-lg bg-white/5">
+                    <Skeleton className="h-4 w-20" />
+                    <Skeleton className="h-8 w-16" />
+                  </div>
+                  <div className="space-y-1">
+                    <Skeleton className="h-3 w-28" />
+                    <Skeleton className="h-10 w-24" />
+                  </div>
+                  <Separator className="bg-white/10" />
+                  <div className="space-y-3">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-16 w-full" />
+                  </div>
+                  <Separator className="bg-white/10" />
+                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-4 w-48 mx-auto" />
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
   if (error)
     return (
       <ErrorState error={error} onRetry={() => window.location.reload()} />
@@ -363,14 +475,22 @@ export default function AgentProfile() {
                             ${earnings.toFixed(2)} USDC
                           </span>
                         </div>
+                        
+                        {/* Stake Management */}
+                        <StakeManagement
+                          agentAddress={agent.walletAddress}
+                          currentStake={parseEther("0.5")}
+                          onStakeUpdated={() => window.location.reload()}
+                        />
+                        
                         <Button
                           variant="outline"
                           className="w-full"
                           onClick={() =>
-                            alert("Manage functionality coming soon!")
+                            (window.location.href = "/edit-agent")
                           }
                         >
-                          Manage Agent
+                          Edit Agent Details
                         </Button>
                       </div>
                     </>

@@ -21,35 +21,40 @@ backend/
 │   │   ├── Task.ts
 │   │   └── Dispute.ts
 │   ├── resolvers/             # GraphQL resolvers
-│   │   ├── AgentResolver.ts       # Agent CRUD + Reap queries
+│   │   ├── AgentResolver.ts
 │   │   ├── ReputationResolver.ts
 │   │   ├── TaskResolver.ts
 │   │   ├── DisputeResolver.ts
-│   │   ├── AnalyticsResolver.ts
-│   │   └── types/
-│   │       └── ExternalAgent.ts   # Reap Protocol types
+│   │   └── AnalyticsResolver.ts
+│   ├── agents/                # Demo AI agents (6 total)
+│   │   ├── index.ts             # Agent router
+│   │   ├── weather.ts           # Weather Prophet
+│   │   ├── crypto.ts            # Crypto Oracle
+│   │   ├── code.ts              # Code Assistant
+│   │   ├── content.ts           # Content Writer
+│   │   ├── research.ts          # Research Assistant
+│   │   └── translation.ts       # Translation Agent
 │   ├── services/
-│   │   ├── AgentService.ts        # Agent business logic
-│   │   ├── ReapService.ts         # Reap Protocol integration
-│   │   ├── ReputationService.ts   # Reputation management
-│   │   ├── DisputeService.ts      # Dispute handling
-│   │   ├── TaskService.ts         # Task management
-│   │   ├── SyncService.ts         # Blockchain sync
-│   │   └── PaymentWorker.ts       # Payment verification
+│   │   ├── AgentService.ts
+│   │   ├── ReputationService.ts
+│   │   ├── DisputeService.ts
+│   │   ├── TaskService.ts
+│   │   ├── SyncService.ts
+│   │   └── PaymentWorker.ts
 │   ├── middleware/
-│   │   ├── auth.ts                # JWT authentication
-│   │   ├── isAuth.ts              # Auth guard
-│   │   └── payment.ts             # x402 payment middleware
-│   ├── routes/
-│   │   └── agents.ts              # REST endpoints
+│   │   ├── auth.ts
+│   │   ├── isAuth.ts
+│   │   └── x402.ts              # x402 payment middleware
+│   ├── sdk/
+│   │   └── elaru-agent-sdk.ts   # Agent SDK for third-parties
 │   ├── utils/
-│   │   └── logger.ts              # Winston logger
-│   ├── app.ts                     # Express app setup
-│   └── server.ts                  # Server entry point
+│   │   └── logger.ts
+│   ├── app.ts
+│   └── server.ts
 ├── prisma/
-│   ├── schema.prisma              # Database schema
-│   └── seed.ts                    # Seed data
-└── .env                           # Environment variables
+│   ├── schema.prisma
+│   └── seed.ts
+└── .env
 ```
 
 ## 🛠️ Setup
@@ -89,10 +94,6 @@ PRIVATE_KEY="0x...your_private_key_here"
 
 # Platform
 PLATFORM_SECRET="hackathon-secret-key"
-
-# Reap Protocol (Optional)
-REAP_MIDDLEWARE_URL="https://avax2.api.reap.deals"
-REAP_CHAIN_RPC="https://api.avax-test.network/ext/bc/C/rpc"
 
 # AI Services (Optional)
 GOOGLE_API_KEY="your_gemini_api_key"
@@ -257,20 +258,6 @@ if (score < 3) {
   const slashAmount = "500000000000000000"; // 0.5 AVAX
   await slashAgent(agentId, slashAmount);
 }
-```
-
-### Reap Protocol Integration
-
-Search external AI agents from multiple registries:
-
-```typescript
-import { reapService } from './services/ReapService';
-
-// Search x402 registry
-const agents = await reapService.searchExternalAgents("weather", "x402");
-
-// Search all registries
-const allAgents = await reapService.searchAllRegistries("trading");
 ```
 
 ### Payment Verification

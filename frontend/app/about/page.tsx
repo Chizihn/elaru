@@ -275,6 +275,7 @@ export default function AboutPage() {
               { name: "x402 Protocol", desc: "USDC payments" },
               { name: "ERC-8004", desc: "On-chain reputation" },
               { name: "Solidity", desc: "Smart contracts" },
+              { name: "Agent Wallet", desc: "Autonomous payments" },
             ].map((tech, i) => (
               <Card key={i} className="text-center border-2 border-border">
                 <CardContent className="p-6">
@@ -308,6 +309,14 @@ export default function AboutPage() {
               onClick={() => router.push("/")}
             >
               Try Live Demo <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+            <Button
+              size="lg"
+              variant="outline"
+              className="px-8"
+              onClick={() => router.push("/autonomous")}
+            >
+              🆕 Autonomous Agent Demo
             </Button>
             <Button
               size="lg"

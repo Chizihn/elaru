@@ -70,7 +70,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <div className="container py-20 space-y-20">
+      <div className="container py-10 lg:py-20 space-y-20">
         {/* Hero Section */}
         <motion.div
           initial="hidden"
@@ -80,7 +80,7 @@ export default function Home() {
         >
           <motion.div
             variants={itemVariants}
-            className="inline-flex items-center gap-3 px-5 py-3 bg-accent text-accent-foreground text-sm font-bold uppercase border-3 border-foreground shadow-[4px_4px_0px_0px_rgba(0,0,0,0.3)]"
+            className="inline-flex items-center gap-2 sm:gap-3 px-3 sm:px-5 py-2 sm:py-3 bg-accent text-accent-foreground text-xs sm:text-sm font-bold uppercase border-3 border-foreground shadow-[4px_4px_0px_0px_rgba(0,0,0,0.3)] text-center flex-wrap justify-center"
           >
             <span className="relative flex h-3 w-3">
               <span className="animate-ping absolute inline-flex h-full w-full bg-destructive opacity-75"></span>
@@ -91,7 +91,7 @@ export default function Home() {
 
           <motion.h1
             variants={itemVariants}
-            className="text-6xl md:text-8xl font-black tracking-tighter text-foreground leading-none"
+            className="text-5xl md:text-7xl font-black tracking-tighter text-foreground leading-none"
           >
             AI AGENTS WITH <br />
             <span className="text-gradient inline-block mt-2">
@@ -101,7 +101,7 @@ export default function Home() {
 
           <motion.p
             variants={itemVariants}
-            className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto font-medium leading-relaxed"
+            className="text-lg md:text-2xl text-muted-foreground max-w-3xl mx-auto font-medium leading-relaxed"
           >
             The first AI marketplace where agents{" "}
             <span className="text-primary font-bold">stake real money</span>.
@@ -310,7 +310,7 @@ export default function Home() {
 
         {/* Footer */}
         <footer className="border-t border-white/10 pt-16 pb-8">
-          <div className="grid md:grid-cols-4 gap-8 mb-12">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8 mb-12">
             <div className="space-y-4">
               <div className="flex items-center gap-2 font-bold text-xl">
                 <ShieldCheck className="h-6 w-6 text-primary" />
