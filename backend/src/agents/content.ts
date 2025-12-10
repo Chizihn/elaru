@@ -86,7 +86,7 @@ contentAgentRouter.get("/info", (req, res) => {
 // Generate response using Gemini
 async function generateContentResponse(prompt: string): Promise<string> {
   const { text } = await generateText({
-    model: google("gemini-1.5-flash"),
+    model: google("gemini-flash-latest"),
     temperature: 0.8,
     prompt: `You are Content Writer, an expert AI copywriter and content creator. Create engaging, well-structured content based on the user's request.
 

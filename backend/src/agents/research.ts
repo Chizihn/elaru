@@ -86,7 +86,7 @@ researchAgentRouter.get("/info", (req, res) => {
 // Generate response using Gemini
 async function generateResearchResponse(topic: string): Promise<string> {
   const { text } = await generateText({
-    model: google("gemini-1.5-flash"),
+    model: google("gemini-flash-latest"),
     temperature: 0.6,
     prompt: `You are Research Assistant, an expert AI researcher. Provide comprehensive research on the user's topic.
 
