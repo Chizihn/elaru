@@ -4,7 +4,7 @@ export const corsConfig: CorsOptions = {
   origin:
     process.env.NODE_ENV === "development"
       ? "*"
-      : [process.env.FRONTEND_URL || "localhost:3000"],
+      : [process.env.FRONTEND_URL || "localhost:3000", "http://localhost:3000"],
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   optionsSuccessStatus: 200,
