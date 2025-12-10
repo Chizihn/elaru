@@ -15,6 +15,7 @@ export const corsConfig: CorsOptions = {
     "Accept",
     "Authorization",
     "apollo-require-preflight",
-    "x-agent-id"
+    "x-agent-id",
+    "x-payment"
   ],
 };

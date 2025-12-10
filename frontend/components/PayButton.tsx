@@ -181,7 +181,7 @@ export function PayButton({
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "X-PAYMENT": xPaymentHeader,
+            "x-payment": xPaymentHeader,
             "x-agent-id": agentId,
           },
           body: JSON.stringify({
