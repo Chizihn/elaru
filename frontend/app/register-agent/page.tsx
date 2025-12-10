@@ -59,6 +59,26 @@ export default function RegisterAgent() {
   });
   const [showServiceModal, setShowServiceModal] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [avaxPrice, setAvaxPrice] = useState<number | null>(null);
+
+  useEffect(() => {
+    // Fetch AVAX price from CoinGecko
+    const fetchPrice = async () => {
+      try {
+        const response = await fetch(
+          "https://api.coingecko.com/api/v3/simple/price?ids=avalanche-2&vs_currencies=usd"
+        );
+        const data = await response.json();
+        if (data["avalanche-2"]?.usd) {
+          setAvaxPrice(data["avalanche-2"].usd);
+        }
+      } catch (error) {
+        console.error("Failed to fetch AVAX price:", error);
+      }
+    };
+
+    fetchPrice();
+  }, []);
 
   const { writeContract, data: hash, isPending } = useWriteContract();
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
@@ -403,7 +423,11 @@ export default function RegisterAgent() {
                           className="bg-background/50 focus:border-primary/50 pr-24"
                         />
                         <div className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-                          ≈ ${parseFloat(formData.stakeAmount || "0") * 40} USD
+                          {avaxPrice ? (
+                            <>≈ ${(parseFloat(formData.stakeAmount || "0") * avaxPrice).toFixed(2)} USD</>
+                          ) : (
+                            <span className="animate-pulse">Loading...</span>
+                          )}
                         </div>
                       </div>
                       <p className="text-xs text-muted-foreground">

@@ -57,7 +57,8 @@ export class AgentService {
           tokenId,
           active: false, // Inactive until staked
           stakedAmount: "0",
-          slashedAmount: "0"
+          slashedAmount: "0",
+          reputationScore: 50
         }
       });
       logger.info(`Agent registered: ${agent.id} (${walletAddress})`);
