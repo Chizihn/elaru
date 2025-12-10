@@ -83,7 +83,7 @@ export default function ChatPage() {
   const searchParams = useSearchParams();
   const agentId = params?.agentId as string;
   const initialTask = searchParams.get("task");
-  const { address } = useAccount();
+  const { address, isConnected } = useAccount();
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState(initialTask || "");
@@ -102,9 +102,10 @@ export default function ChatPage() {
   const [autonomousPayments, setAutonomousPayments] = useState<AutonomousPayment[]>([]);
   const [isAutonomousSending, setIsAutonomousSending] = useState(false);
 
+  // Skip query if not connected to avoid variable error
   const { data, loading } = useQuery<{ getAgent: Agent }>(GET_AGENT_DETAILS, {
-    variables: { id: agentId, walletAddress: address },
-    skip: !agentId,
+    variables: { id: agentId, walletAddress: address || "" },
+    skip: !agentId || !address,
   });
 
   const [recordInteraction] = useMutation(RECORD_AGENT_INTERACTION);
@@ -351,6 +352,25 @@ export default function ChatPage() {
       minute: "2-digit",
     });
   };
+
+  if (!isConnected) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center p-4 text-center space-y-8 bg-background">
+        <div className="relative">
+          <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full" />
+          <div className="relative h-24 w-24 rounded-3xl bg-card border border-border flex items-center justify-center shadow-2xl ring-1 ring-white/10">
+            <Wallet className="h-12 w-12 text-primary" />
+          </div>
+        </div>
+        <div className="space-y-3 max-w-md">
+          <h2 className="text-3xl font-bold tracking-tight text-foreground ">Connect Wallet</h2>
+          <p className="text-muted-foreground leading-relaxed">
+            Please connect your wallet to chat with this agent. You need a wallet to sign requests and verify payments on the Elaru Protocol.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     // Root container: Use fixed positioning to bypass global layout flow and prevent body scroll

@@ -98,6 +98,7 @@ export function AuthProvider({
       const authToken = result.data?.authenticate.token;
       if (authToken) {
         localStorage.setItem("auth_token", authToken);
+        if (address) localStorage.setItem("auth_address", address);
         setToken(authToken);
         await loginAction(authToken);
       }
@@ -112,31 +113,41 @@ export function AuthProvider({
   }, [address, authenticate, disconnect, signMessageAsync]);
 
   useEffect(() => {
-    console.log("AuthProvider: Effect triggered", {
-      isConnected,
-      address,
-      token,
-      authInProgress: authInProgress.current,
-    });
+    // 1. Detect Explicit Disconnect / Wallet Switch
+    if (!isConnected && token) {
+      console.log("AuthProvider: Wallet disconnected, clearing session.");
+      logout();
+      return;
+    }
 
-    // Sync token to localStorage for Apollo Client
+    // 2. Check for wallet address mismatch (Switch Account)
+    if (isConnected && address && token) {
+      const lastAddress = localStorage.getItem("auth_address");
+      if (lastAddress && lastAddress.toLowerCase() !== address.toLowerCase()) {
+        console.warn("AuthProvider: Wallet changed, logging out old user.");
+        logout();
+        return;
+      }
+    }
+
+    // 3. Sync token to localStorage
     if (token) {
       localStorage.setItem("auth_token", token);
     } else {
       localStorage.removeItem("auth_token");
+      localStorage.removeItem("auth_address");
     }
 
-    // Auto-authenticate when wallet connects
-    if (isConnected && address && !token) {
-      console.log("AuthProvider: Conditions met, calling handleAuth");
+    // 4. Auto-authenticate
+    if (isConnected && address && !token && !authInProgress.current) {
+      console.log("AuthProvider: triggering flow for", address);
       handleAuth();
-    } else {
-      console.log("AuthProvider: Conditions NOT met");
     }
   }, [isConnected, address, token, handleAuth]);
 
   const logout = async () => {
     localStorage.removeItem("auth_token");
+    localStorage.removeItem("auth_address");
     setToken(null);
     await logoutAction();
   };
