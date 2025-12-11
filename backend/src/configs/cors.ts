@@ -16,6 +16,14 @@ export const corsConfig: CorsOptions = {
     "Authorization",
     "apollo-require-preflight",
     "x-agent-id",
-    "x-payment"
+    "x-payment",
+    "Access-Control-Expose-Headers",
+    "Access-Control-Request-Headers"
   ],
+  exposedHeaders: [
+    "x-payment-request", 
+    "x-payment-error", 
+    "x-payment-status",
+    "www-authenticate"
+  ]
 };

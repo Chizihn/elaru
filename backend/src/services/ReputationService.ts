@@ -39,15 +39,28 @@ export class ReputationService {
     comment: string | null,
     paymentProof: string
   ): Promise<Reputation> {
+    console.log("\n" + "=".repeat(60));
+    console.log("📝 FEEDBACK SUBMISSION STARTED");
+    console.log("=".repeat(60));
+    console.log(`Agent ID: ${agentId}`);
+    console.log(`Reviewer: ${reviewer}`);
+    console.log(`Score: ${score}/5 ${score >= 4 ? "✅ GOOD" : score === 3 ? "⚠️ NEUTRAL" : "❌ BAD"}`);
+    console.log(`Comment: ${comment || "(none)"}`);
+    console.log(`Payment Proof: ${paymentProof.substring(0, 20)}...`);
+    console.log("-".repeat(60));
+
     if (score < 1 || score > 5) {
+      console.log("❌ REJECTED: Score must be between 1 and 5");
       throw new Error("Score must be between 1 and 5");
     }
 
     // Verify payment was actually made (critical for fairness)
     const isValidProof = await this.verifyPaymentProof(paymentProof);
     if (!isValidProof) {
+      console.log("❌ REJECTED: Invalid payment proof");
       throw new Error("Invalid or missing payment proof (tx hash required)");
     }
+    console.log("✅ Payment proof verified");
 
     // Save reputation record
     const reputation = await prisma.reputation.create({
@@ -59,14 +72,23 @@ export class ReputationService {
         paymentProof,
       },
     });
+    console.log(`✅ Reputation record saved (ID: ${reputation.id})`);
 
     // Update reputation score with incremental adjustment
     await this.updateAgentReputationScore(agentId, score);
 
     // Trigger slash flow if score is too low
     if (score < LOW_SCORE_THRESHOLD) {
+      console.log("\n⚠️ LOW SCORE DETECTED - ENTERING SLASH FLOW");
+      console.log(`Threshold: < ${LOW_SCORE_THRESHOLD} stars triggers slash evaluation`);
       await this.slashAgentForLowScore(agentId, score, comment);
+    } else {
+      console.log(`\n✅ HIGH SCORE (${score}/5) - No slash triggered`);
     }
+
+    console.log("=".repeat(60));
+    console.log("📝 FEEDBACK SUBMISSION COMPLETE");
+    console.log("=".repeat(60) + "\n");
 
     return reputation;
   }
@@ -257,16 +279,17 @@ export class ReputationService {
     comment: string,
     score: number
   ): Promise<boolean> {
+    console.log("\n🤖 AI JUDGE (Gemini) EVALUATION");
+    console.log("-".repeat(40));
+    console.log(`Input Score: ${score}/5`);
+    console.log(`Input Comment: "${comment}"`);
+    
     if (!process.env.GOOGLE_API_KEY) {
-      console.warn("No Google API key → skipping AI judge, approving slash");
+      console.warn("⚠️ No Google API key → AUTO-APPROVING slash (add GOOGLE_API_KEY to enable AI judge)");
       return true;
     }
 
-    try {
-      const { text } = await generateText({
-        model: google("gemini-1.5-flash"),
-        temperature: 0.3,
-        prompt: `
+    const prompt = `
 You are an impartial AI Judge in a decentralized agent marketplace on Avalanche.
 
 CASE:
@@ -278,15 +301,32 @@ RULES:
 - NO → if user is complaining about price, being "too slow" without proof, spam, trolling, or didn't pay
 
 Answer with only: YES or NO
-        `.trim(),
+    `.trim();
+
+    console.log("\nPrompt sent to Gemini:");
+    console.log(prompt);
+    console.log("-".repeat(40));
+
+    try {
+      const { text } = await generateText({
+        model: google("gemini-1.5-flash"),
+        temperature: 0.3,
+        prompt,
       });
 
       const verdict = text.trim().toUpperCase();
-      console.log(`Gemini Judge says: ${verdict}`);
+      console.log(`\n🔮 GEMINI VERDICT: ${verdict}`);
+      
+      if (verdict === "YES") {
+        console.log("→ Agent DID fail/lie → SLASH APPROVED ✅");
+      } else {
+        console.log("→ Review appears invalid → SLASH REJECTED (Agent protected) 🛡️");
+      }
 
       return verdict === "YES";
     } catch (error: any) {
-      console.error("AI Judge error (defaulting to NO slash):", error.message);
+      console.error("❌ AI Judge error:", error.message);
+      console.log("→ Defaulting to NO slash (agent protected on error)");
       return false;
     }
   }

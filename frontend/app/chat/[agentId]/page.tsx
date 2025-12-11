@@ -10,7 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { PayButton } from "@/components/PayButton";
 import { ReviewModal } from "@/components/ReviewModal";
 import { ChatHistory, HistoryTask } from "@/components/ChatHistory";
-import { AgentWalletPanel, AutonomousPaymentStatus, AutonomousPayment } from "@/components/AgentWallet";
+import { AgentWalletPanel, AutonomousPaymentStatus, AutonomousPayment, BudgetAuthorization } from "@/components/AgentWallet";
 import { useQuery, useMutation } from "@apollo/client/react";
 import {
   Send,
@@ -101,6 +101,7 @@ export default function ChatPage() {
   const [agentBalance, setAgentBalance] = useState<bigint>(BigInt(0));
   const [autonomousPayments, setAutonomousPayments] = useState<AutonomousPayment[]>([]);
   const [isAutonomousSending, setIsAutonomousSending] = useState(false);
+  const [reviewedTxHashes, setReviewedTxHashes] = useState<Set<string>>(new Set());
 
   // Skip query if not connected to avoid variable error
   const { data, loading } = useQuery<{ getAgent: Agent }>(GET_AGENT_DETAILS, {
@@ -490,20 +491,34 @@ export default function ChatPage() {
                 <Switch
                   checked={autonomousMode}
                   onCheckedChange={setAutonomousMode}
-                  disabled={!agentWallet || agentBalance === BigInt(0)}
+                  disabled={!agentWallet}
                 />
               </div>
               {autonomousMode ? (
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-muted-foreground">Agent Wallet</span>
-                    <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/30">
+                    <Badge 
+                      variant="outline" 
+                      className={agentBalance > BigInt(0) 
+                        ? "bg-green-500/10 text-green-500 border-green-500/30"
+                        : "bg-yellow-500/10 text-yellow-500 border-yellow-500/30"
+                      }
+                    >
                       {formatUSDCBalance(agentBalance)}
                     </Badge>
                   </div>
-                  <p className="text-[10px] text-green-500">
-                    ✓ Payments are automatic — no popups!
-                  </p>
+                  {agent && agentBalance >= BigInt(agent.pricePerRequest) ? (
+                    <p className="text-[10px] text-green-500">
+                      ✓ Payments are automatic — no popups!
+                    </p>
+                  ) : (
+                    <div className="space-y-2">
+                      <p className="text-[10px] text-yellow-500">
+                        ⚠ Fund your wallet to enable auto-payments
+                      </p>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <p className="text-[10px] text-muted-foreground">
@@ -512,8 +527,8 @@ export default function ChatPage() {
               )}
             </div>
 
-            {/* Agent Wallet Panel (collapsed) */}
-            {!agentWallet && (
+            {/* Agent Wallet Panel - Show if no wallet OR if autonomous mode on with low balance */}
+            {!agentWallet ? (
               <AgentWalletPanel
                 userAddress={address || ""}
                 onWalletReady={handleAgentWalletReady}
@@ -523,7 +538,16 @@ export default function ChatPage() {
                   setAutonomousMode(false);
                 }}
               />
-            )}
+            ) : autonomousMode && agent && agentBalance < BigInt(agent.pricePerRequest) ? (
+              <BudgetAuthorization
+                agentWallet={agentWallet}
+                userAddress={address || ""}
+                onFundingComplete={() => {
+                  // Refresh balance after funding
+                  getUSDCBalance(agentWallet.address, thirdwebClient).then(setAgentBalance);
+                }}
+              />
+            ) : null}
           </motion.div>
         ) : (
           <div className="text-red-400 text-sm">Agent not found</div>
@@ -672,7 +696,7 @@ export default function ChatPage() {
                       content={msg.content}
                       role={msg.role}
                       className={msg.role === "user" ? "mr-1" : "ml-1"}
-                      showRate={msg.role === "assistant" && !!msg.relatedTxHash}
+                      showRate={msg.role === "assistant" && !!msg.relatedTxHash && !reviewedTxHashes.has(msg.relatedTxHash)}
                       onRate={() => {
                         if (agent && msg.relatedTxHash) {
                           setReviewTask({
@@ -826,8 +850,11 @@ export default function ChatPage() {
           task={reviewTask}
           onClose={() => setReviewTask(null)}
           onSubmit={() => {
+            // Mark this tx as reviewed so button hides
+            if (reviewTask.paymentTxHash) {
+              setReviewedTxHashes(prev => new Set([...prev, reviewTask.paymentTxHash]));
+            }
             setReviewTask(null);
-            // Optional: Show toast or update UI
           }}
         />
       )}
