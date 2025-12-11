@@ -43,7 +43,7 @@ import {
 } from "@/lib/agent-wallet";
 import { createAutonomousFetch, AutonomousPaymentConfig } from "@/lib/agent-payment";
 import { toast } from "sonner";
-import { useApolloClient, useQuery } from "@apollo/client/react";
+import { useApolloClient, useQuery, useMutation } from "@apollo/client/react";
 
 // Create thirdweb client
 const thirdwebClient = createThirdwebClient({
@@ -109,7 +109,7 @@ export default function ChatPage() {
     skip: !agentId || !address,
   });
 
-  // const [recordInteraction] = useMutation(RECORD_AGENT_INTERACTION);
+  const [recordInteraction] = useMutation(RECORD_AGENT_INTERACTION);
   const client = useApolloClient();
 
   const agent = data?.getAgent;
@@ -228,21 +228,18 @@ export default function ChatPage() {
         };
         setMessages((prev) => [...prev, assistantMsg]);
 
-        // Record interaction via API
+        // Record interaction
         try {
-          await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/tasks/interaction`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              walletAddress: agentWallet.address,
+          await recordInteraction({
+            variables: {
               agentId: agent.id,
               description: userContent,
               txHash: data.txHash || "autonomous-payment",
               result: data.result,
-            })
+            },
+            refetchQueries: ["GetUserTasks"],
+            awaitRefetchQueries: true,
           });
-          // Refresh history
-          client.refetchQueries({ include: ["GetUserTasks"] });
         } catch (err) {
           console.error("Failed to record interaction:", err);
         }
@@ -301,20 +298,16 @@ export default function ChatPage() {
       if (!agent) return; // Guard against undefined agent
 
       try {
-        if (address) {
-          await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/tasks/interaction`, {
-             method: "POST",
-             headers: { "Content-Type": "application/json" },
-             body: JSON.stringify({
-               walletAddress: address, // User's address
-               agentId: agent.id,
-               description: input,
-               txHash: txHash || "0x...",
-               result: (responseData as any).result || "No response",
-             })
-           });
-           client.refetchQueries({ include: ["GetUserTasks"] });
-        }
+        await recordInteraction({
+          variables: {
+            agentId: agent.id,
+            description: input,
+            txHash: txHash || "0x...",
+            result: (responseData as any).result || "No response",
+          },
+          refetchQueries: ["GetUserTasks"],
+          awaitRefetchQueries: true,
+        });
       } catch (err) {
         console.error("Failed to record interaction:", err);
       }
@@ -652,9 +645,12 @@ export default function ChatPage() {
                       }`}
                     >
                       {msg.role === "assistant" ? (
-                        <div className="prose prose-invert prose-sm max-w-none [&>p]:leading-relaxed [&_code]:bg-background/50 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-primary">
+                        <div className="prose prose-invert prose-sm max-w-none [&>p]:leading-relaxed [&_code]:bg-background/50 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-primary [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-lg [&_img]:my-2">
                           <ReactMarkdown
                             components={{
+                              img: ({ node, ...props }) => (
+                                <img {...props} className="max-w-full h-auto rounded-lg shadow-md my-2" loading="lazy" />
+                              ),
                               code({ className, children, ...props }) {
                                 const match = /language-(\w+)/.exec(
                                   className || ""

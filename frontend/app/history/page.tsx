@@ -322,8 +322,14 @@ export default function HistoryPage() {
                 Output from {resultTask.agent?.serviceType || "Agent"}
               </DialogDescription>
             </DialogHeader>
-            <div className="mt-4 prose dark:prose-invert max-w-none">
-              <ReactMarkdown>
+            <div className="mt-4 prose dark:prose-invert max-w-none [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-lg [&_img]:my-4">
+              <ReactMarkdown
+                components={{
+                  img: ({ node, ...props }) => (
+                    <img {...props} className="max-w-full h-auto rounded-lg shadow-md" loading="lazy" />
+                  ),
+                }}
+              >
                 {resultTask.result || "*No result content*"}
               </ReactMarkdown>
             </div>

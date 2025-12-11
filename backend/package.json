@@ -24,6 +24,8 @@
     "@ai-sdk/openai": "^2.0.75",
     "@apollo/server": "^5.2.0",
     "@as-integrations/express5": "^1.1.2",
+    "@google/genai": "^1.33.0",
+    "@google/generative-ai": "^0.24.1",
     "@prisma/client": "5.10.0",
     "ai": "^5.0.104",
     "axios": "^1.13.2",

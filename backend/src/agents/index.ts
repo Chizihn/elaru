@@ -12,6 +12,7 @@ import { cryptoAgentRouter } from "./crypto";
 import { contentAgentRouter } from "./content";
 import { researchAgentRouter } from "./research";
 import { translationAgentRouter } from "./translation";
+import { imageAgentRouter } from "./image";
 
 export const agentsRouter = Router();
 
@@ -22,6 +23,7 @@ agentsRouter.use("/crypto", cryptoAgentRouter);
 agentsRouter.use("/content", contentAgentRouter);
 agentsRouter.use("/research", researchAgentRouter);
 agentsRouter.use("/translation", translationAgentRouter);
+agentsRouter.use("/image", imageAgentRouter);
 
 // Agent discovery endpoint
 agentsRouter.get("/", (req, res) => {
@@ -56,6 +58,11 @@ agentsRouter.get("/", (req, res) => {
         name: "Translation Agent",
         endpoint: "/agents/translation/webhook",
         description: "Multi-language translation with context awareness",
+      },
+      {
+        name: "Image Generator",
+        endpoint: "/agents/image/webhook",
+        description: "AI-powered image generation from text descriptions",
       },
     ],
   });

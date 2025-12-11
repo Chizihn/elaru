@@ -37,7 +37,10 @@ import { useRouter } from "next/navigation";
 import { useAccount, useWriteContract } from "wagmi";
 import { parseUnits } from "viem";
 import { toast } from "sonner";
+import { useMutation } from "@apollo/client/react";
+import { RECORD_AGENT_INTERACTION } from "@/graphql/mutations/agents";
 import { ReviewModal } from "@/components/ReviewModal";
+import ReactMarkdown from "react-markdown";
 import {
   Dialog,
   DialogContent,
@@ -127,9 +130,21 @@ const AgentResult = ({
               exit={{ height: 0, opacity: 0 }}
             >
               <div className="p-3 pt-0 border-t border-green-500/10">
-                 <div className="relative mt-2 rounded bg-card/50 border border-border/50 p-3 max-h-60 overflow-y-auto font-mono text-xs whitespace-pre-wrap group">
-                    {result.result?.slice(0, 500)}
-                    {result.result && result.result.length > 500 && "..."}
+                 <div className="relative mt-2 rounded bg-card/50 border border-border/50 p-3 max-h-60 overflow-y-auto group">
+                    <div className="prose prose-sm dark:prose-invert max-w-none [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-lg [&_img]:my-2">
+                      <ReactMarkdown
+                        components={{
+                          img: ({ node, ...props }) => (
+                            <img {...props} className="max-w-full h-auto rounded-lg shadow-md" loading="lazy" />
+                          ),
+                        }}
+                      >
+                        {result.result?.slice(0, 1500) || ""}
+                      </ReactMarkdown>
+                      {result.result && result.result.length > 1500 && (
+                        <p className="text-muted-foreground text-xs mt-2">...content truncated. Click maximize to see full output.</p>
+                      )}
+                    </div>
                     
                     {/* Floating Actions */}
                     <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-background/80 p-1 rounded backdrop-blur-sm">
@@ -190,8 +205,18 @@ const AgentResult = ({
              </DialogDescription>
           </DialogHeader>
           
-          <div className="flex-1 overflow-y-auto p-6 bg-muted/10 font-mono text-sm whitespace-pre-wrap">
-            {result.result}
+          <div className="flex-1 overflow-y-auto p-6 bg-muted/10">
+            <div className="prose prose-sm dark:prose-invert max-w-none [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-lg [&_img]:my-4">
+              <ReactMarkdown
+                components={{
+                  img: ({ node, ...props }) => (
+                    <img {...props} className="max-w-full h-auto rounded-lg shadow-md" loading="lazy" />
+                  ),
+                }}
+              >
+                {result.result || ""}
+              </ReactMarkdown>
+            </div>
           </div>
 
           <div className="p-4 border-t bg-background flex justify-end gap-2">
@@ -210,6 +235,7 @@ const AgentResult = ({
 export default function WorkflowPage() {
   const router = useRouter();
   const { address } = useAccount();
+  const [recordInteraction] = useMutation(RECORD_AGENT_INTERACTION);
 
   // Workflow store
   const {
@@ -536,20 +562,22 @@ Do NOT repeat the user's original request - instead, TRANSFORM/PROCESS the previ
             )
           );
 
-          // [FIX] Record interaction via backend API (fire and forget)
-          // Use user's connected wallet (address), not agent wallet (wallet.address)
-          if (data.txHash && address) {
-            fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/tasks/interaction`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                walletAddress: address,  // User's wallet, not agent wallet
-                agentId: agent.id,
-                description: promptWithContext,
-                txHash: data.txHash,
-                result: data.result
-              })
-            }).catch(err => console.error("Failed to record interaction stats:", err));
+          // Record interaction via GraphQL mutation
+          if (data.txHash) {
+            try {
+              await recordInteraction({
+                variables: {
+                  agentId: agent.id,
+                  description: promptWithContext,
+                  txHash: data.txHash,
+                  result: data.result,
+                },
+                refetchQueries: ["GetUserTasks"],
+                awaitRefetchQueries: true,
+              });
+            } catch (err) {
+              console.error("Failed to record interaction:", err);
+            }
           }
         } else {
           setResults((prev) =>
