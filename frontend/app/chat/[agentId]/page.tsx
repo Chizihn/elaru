@@ -11,7 +11,6 @@ import { PayButton } from "@/components/PayButton";
 import { ReviewModal } from "@/components/ReviewModal";
 import { ChatHistory, HistoryTask } from "@/components/ChatHistory";
 import { AgentWalletPanel, AutonomousPaymentStatus, AutonomousPayment, BudgetAuthorization } from "@/components/AgentWallet";
-import { useQuery, useMutation } from "@apollo/client/react";
 import {
   Send,
   Bot,
@@ -44,6 +43,7 @@ import {
 } from "@/lib/agent-wallet";
 import { createAutonomousFetch, AutonomousPaymentConfig } from "@/lib/agent-payment";
 import { toast } from "sonner";
+import { useApolloClient, useQuery } from "@apollo/client/react";
 
 // Create thirdweb client
 const thirdwebClient = createThirdwebClient({
@@ -109,7 +109,8 @@ export default function ChatPage() {
     skip: !agentId || !address,
   });
 
-  const [recordInteraction] = useMutation(RECORD_AGENT_INTERACTION);
+  // const [recordInteraction] = useMutation(RECORD_AGENT_INTERACTION);
+  const client = useApolloClient();
 
   const agent = data?.getAgent;
 
@@ -227,18 +228,21 @@ export default function ChatPage() {
         };
         setMessages((prev) => [...prev, assistantMsg]);
 
-        // Record interaction
+        // Record interaction via API
         try {
-          await recordInteraction({
-            variables: {
+          await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/tasks/interaction`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              walletAddress: agentWallet.address,
               agentId: agent.id,
               description: userContent,
               txHash: data.txHash || "autonomous-payment",
               result: data.result,
-            },
-            refetchQueries: ["GetUserTasks"],
-            awaitRefetchQueries: true,
+            })
           });
+          // Refresh history
+          client.refetchQueries({ include: ["GetUserTasks"] });
         } catch (err) {
           console.error("Failed to record interaction:", err);
         }
@@ -297,16 +301,20 @@ export default function ChatPage() {
       if (!agent) return; // Guard against undefined agent
 
       try {
-        await recordInteraction({
-          variables: {
-            agentId: agent.id,
-            description: input,
-            txHash: txHash || "0x...",
-            result: (responseData as any).result || "No response",
-          },
-          refetchQueries: ["GetUserTasks"],
-          awaitRefetchQueries: true,
-        });
+        if (address) {
+          await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/tasks/interaction`, {
+             method: "POST",
+             headers: { "Content-Type": "application/json" },
+             body: JSON.stringify({
+               walletAddress: address, // User's address
+               agentId: agent.id,
+               description: input,
+               txHash: txHash || "0x...",
+               result: (responseData as any).result || "No response",
+             })
+           });
+           client.refetchQueries({ include: ["GetUserTasks"] });
+        }
       } catch (err) {
         console.error("Failed to record interaction:", err);
       }

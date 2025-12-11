@@ -52,7 +52,7 @@ export function Navbar() {
               href={route.href}
               className={cn(
                 "text-sm font-bold uppercase tracking-wide transition-all px-4 py-2 border-2 border-transparent",
-                pathname === route.href
+                (pathname === route.href || (route.href === "/agents" && pathname === "/workflow"))
                   ? "text-primary border-primary bg-primary/10"
                   : "text-muted-foreground hover:text-primary hover:border-primary/50"
               )}
@@ -99,7 +99,7 @@ export function Navbar() {
                 onClick={() => setIsOpen(false)}
                 className={cn(
                   "text-sm font-bold uppercase tracking-wide transition-all px-4 py-3 border-2",
-                  pathname === route.href
+                    (pathname === route.href || (route.href === "/agents" && pathname === "/workflow"))
                     ? "text-primary border-primary bg-primary/10"
                     : "text-muted-foreground border-border hover:text-primary hover:border-primary/50"
                 )}

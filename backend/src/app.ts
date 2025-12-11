@@ -18,6 +18,7 @@ import { corsConfig } from "./configs/cors";
 import { createApolloServer } from "./graphql/server";
 import prisma from "./configs/database";
 import { agentsRouter } from "./agents";
+import { tasksRouter } from "./routes/tasks";
 
 export async function createApp() {
   const app = express();
@@ -61,6 +62,10 @@ export async function createApp() {
 
   // Demo Agents Router
   app.use("/agents", agentsRouter);
+  
+  // Public Tasks API
+  app.use("/api/tasks", tasksRouter);
+  logger.info("Task API mounted at /api/tasks/*");
   logger.info("Demo agents mounted at /agents/*");
 
 

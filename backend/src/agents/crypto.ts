@@ -7,6 +7,7 @@
 
 import { Router, Request, Response } from "express";
 import axios from "axios";
+import { generateText } from "ai";
 import { createElaruAgent } from "../sdk/elaru-agent-sdk";
 
 
@@ -54,14 +55,16 @@ cryptoAgentRouter.post("/webhook", cryptoAgent.middleware, async (req: Request, 
     console.log(`\n📈 Crypto Oracle received: "${description}"`);
 
     let settlementTxHash: string | null = null;
+    let payerAddress: string | null = null;
 
     // Get payment info
     const payment = cryptoAgent.getPaymentInfo(req);
     if (payment) {
       console.log(`💳 Paid by: ${payment.payer}`);
+      payerAddress = payment.payer;
        if (payment.transactionHash) {
           settlementTxHash = payment.transactionHash;
-          console.log(`💰 Payment settled: ${settlementTxHash}`);
+          console.log(`💰 Payment settled on-chain: ${settlementTxHash}`);
        }
     }
 

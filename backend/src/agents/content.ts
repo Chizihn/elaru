@@ -36,11 +36,13 @@ contentAgentRouter.post("/webhook", contentAgent.middleware, async (req: Request
     console.log(`\n✍️ Content Writer received: "${description}"`);
 
     let settlementTxHash: string | null = null;
+    let payerAddress: string | null = null;
 
     // Get payment info
     const payment = contentAgent.getPaymentInfo(req);
     if (payment) {
       console.log(`💳 Paid by: ${payment.payer}`);
+      payerAddress = payment.payer;
        if (payment.transactionHash) {
           settlementTxHash = payment.transactionHash;
           console.log(`💰 Payment settled on-chain: ${settlementTxHash}`);

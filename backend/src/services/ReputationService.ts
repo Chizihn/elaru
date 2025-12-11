@@ -74,6 +74,21 @@ export class ReputationService {
     });
     console.log(`✅ Reputation record saved (ID: ${reputation.id})`);
 
+    // [FIX] Also update the Task record's reviewScore to hide "Rate" button
+    // Lookup task by paymentTxHash (paymentProof)
+    const task = await prisma.task.findFirst({
+      where: { paymentTxHash: paymentProof }
+    });
+    if (task) {
+      await prisma.task.update({
+        where: { id: task.id },
+        data: { reviewScore: score, reviewComment: comment?.trim() || null }
+      });
+      console.log(`✅ Task ${task.id} reviewScore updated to ${score}`);
+    } else {
+      console.log(`⚠️ No task found for paymentTxHash: ${paymentProof.substring(0, 20)}...`);
+    }
+
     // Update reputation score with incremental adjustment
     await this.updateAgentReputationScore(agentId, score);
 

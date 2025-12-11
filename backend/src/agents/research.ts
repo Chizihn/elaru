@@ -36,11 +36,13 @@ researchAgentRouter.post("/webhook", researchAgent.middleware, async (req: Reque
     console.log(`\n🔍 Research Assistant received: "${description}"`);
 
     let settlementTxHash: string | null = null;
+    let payerAddress: string | null = null;
 
     // Get payment info
     const payment = researchAgent.getPaymentInfo(req);
     if (payment) {
       console.log(`💳 Paid by: ${payment.payer}`);
+      payerAddress = payment.payer;
        if (payment.transactionHash) {
           settlementTxHash = payment.transactionHash;
           console.log(`💰 Payment settled on-chain: ${settlementTxHash}`);

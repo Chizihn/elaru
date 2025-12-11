@@ -28,6 +28,9 @@ import {
   ExternalLink,
   ArrowUp,
   ArrowDown,
+  Maximize2,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -35,6 +38,13 @@ import { useAccount, useWriteContract } from "wagmi";
 import { parseUnits } from "viem";
 import { toast } from "sonner";
 import { ReviewModal } from "@/components/ReviewModal";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import {
   useWorkflowStore,
   WorkflowAgent,
@@ -65,6 +75,137 @@ interface WorkflowResult {
   txHash?: string;
   rated?: boolean;
 }
+
+// Improved Agent Result Component
+const AgentResult = ({ 
+  result, 
+  agent, 
+  index, 
+  onRate 
+}: { 
+  result: WorkflowResult, 
+  agent: WorkflowAgent, 
+  index: number, 
+  onRate: () => void 
+}) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [isMaximized, setIsMaximized] = useState(false);
+
+  const copyToClipboard = () => {
+    if (result.result) {
+      navigator.clipboard.writeText(result.result);
+      toast.success("Result copied to clipboard");
+    }
+  };
+
+  return (
+    <>
+      <div className="rounded-lg border border-green-500/20 bg-green-500/5 overflow-hidden transition-all">
+        {/* Header / Toggle */}
+        <div 
+          className="flex items-center justify-between p-3 cursor-pointer hover:bg-green-500/10 transition-colors"
+          onClick={() => setIsExpanded(!isExpanded)}
+        >
+          <div className="flex items-center gap-2">
+            <CheckCircle className="h-4 w-4 text-green-500" />
+            <span className="text-sm font-medium text-green-700">Task Completed</span>
+          </div>
+          <div className="flex items-center gap-1 text-muted-foreground">
+             <span className="text-[10px] uppercase font-semibold tracking-wider mr-2">
+               {isExpanded ? "Hide Output" : "Show Output"}
+             </span>
+             {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </div>
+        </div>
+
+        {/* Collapsible Content */}
+        <AnimatePresence>
+          {isExpanded && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+            >
+              <div className="p-3 pt-0 border-t border-green-500/10">
+                 <div className="relative mt-2 rounded bg-card/50 border border-border/50 p-3 max-h-60 overflow-y-auto font-mono text-xs whitespace-pre-wrap group">
+                    {result.result?.slice(0, 500)}
+                    {result.result && result.result.length > 500 && "..."}
+                    
+                    {/* Floating Actions */}
+                    <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-background/80 p-1 rounded backdrop-blur-sm">
+                       <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => { e.stopPropagation(); copyToClipboard(); }} title="Copy">
+                         <Copy className="h-3 w-3" />
+                       </Button>
+                       <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => { e.stopPropagation(); setIsMaximized(true); }} title="Maximize">
+                         <Maximize2 className="h-3 w-3" />
+                       </Button>
+                    </div>
+                 </div>
+
+                 {/* Footer Actions */}
+                 <div className="flex items-center justify-between mt-3">
+                    {result.txHash && (
+                      <a
+                        href={`https://testnet.snowtrace.io/tx/${result.txHash}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-green-600 hover:text-green-700 hover:underline flex items-center"
+                      >
+                        View TX <ExternalLink className="h-3 w-3 ml-1" />
+                      </a>
+                    )}
+                    
+                    {!result.rated ? (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 text-xs text-yellow-600 hover:text-yellow-700 hover:bg-yellow-500/10 px-2"
+                        onClick={(e) => { e.stopPropagation(); onRate(); }}
+                      >
+                        <Star className="h-3 w-3 mr-1" />
+                        Rate Output
+                      </Button>
+                    ) : (
+                      <span className="text-[10px] bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full flex items-center">
+                        <Star className="h-3 w-3 mr-1 fill-current" /> Rated
+                      </span>
+                    )}
+                 </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Full Screen Modal */}
+      <Dialog open={isMaximized} onOpenChange={setIsMaximized}>
+        <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col p-0 gap-0 overflow-hidden">
+          <DialogHeader className="p-4 border-b">
+             <DialogTitle className="flex items-center gap-2">
+               <span className="text-xl">{agent.name || agent.serviceType}</span>
+               <Badge variant="outline">{agent.serviceType}</Badge>
+             </DialogTitle>
+             <DialogDescription>
+               Full output generated by agent. Cost: {formatWorkflowPrice(parseInt(agent.pricePerRequest))}
+             </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex-1 overflow-y-auto p-6 bg-muted/10 font-mono text-sm whitespace-pre-wrap">
+            {result.result}
+          </div>
+
+          <div className="p-4 border-t bg-background flex justify-end gap-2">
+             <Button variant="outline" onClick={() => setIsMaximized(false)}>Close</Button>
+             <Button onClick={copyToClipboard}>
+               <Copy className="h-4 w-4 mr-2" />
+               Copy Full Text
+             </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+};
 
 export default function WorkflowPage() {
   const router = useRouter();
@@ -394,6 +535,22 @@ Do NOT repeat the user's original request - instead, TRANSFORM/PROCESS the previ
                 : r
             )
           );
+
+          // [FIX] Record interaction via backend API (fire and forget)
+          // Use user's connected wallet (address), not agent wallet (wallet.address)
+          if (data.txHash && address) {
+            fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/tasks/interaction`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                walletAddress: address,  // User's wallet, not agent wallet
+                agentId: agent.id,
+                description: promptWithContext,
+                txHash: data.txHash,
+                result: data.result
+              })
+            }).catch(err => console.error("Failed to record interaction stats:", err));
+          }
         } else {
           setResults((prev) =>
             prev.map((r, idx) =>
@@ -568,7 +725,7 @@ Do NOT repeat the user's original request - instead, TRANSFORM/PROCESS the previ
                               )}
                             </div>
 
-                            {/* Agent Content */}
+                              {/* Agent Content */}
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center justify-between gap-2">
                                 <div>
@@ -626,47 +783,17 @@ Do NOT repeat the user's original request - instead, TRANSFORM/PROCESS the previ
                               {/* Running/Result Output */}
                               <div className="mt-3">
                                 {result?.result && (
-                                  <motion.div
-                                    initial={{ opacity: 0, height: 0 }}
-                                    animate={{ opacity: 1, height: "auto" }}
-                                    className="p-4 rounded-lg bg-green-500/10 border border-green-500/20 text-sm"
-                                  >
-                                    <p className="whitespace-pre-wrap text-foreground/90 font-mono text-xs">
-                                      {result.result}
-                                    </p>
-                                    <div className="flex items-center justify-between mt-3 pt-2 border-t border-green-500/20">
-                                      {result.txHash && (
-                                        <a
-                                          href={`https://testnet.snowtrace.io/tx/${result.txHash}`}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          className="text-xs text-green-600 hover:text-green-700 hover:underline flex items-center"
-                                        >
-                                          View TX <ExternalLink className="h-3 w-3 ml-1" />
-                                        </a>
-                                      )}
-                                      {!result.rated ? (
-                                        <Button
-                                          variant="ghost"
-                                          size="sm"
-                                          className="h-6 text-xs text-yellow-600 hover:text-yellow-700 hover:bg-yellow-500/10 px-2"
-                                          onClick={() => setReviewingAgent({
-                                            id: agent.id,
-                                            name: agent.name || agent.serviceType,
-                                            txHash: result.txHash || "",
-                                            index,
-                                          })}
-                                        >
-                                          <Star className="h-3 w-3 mr-1" />
-                                          Rate Output
-                                        </Button>
-                                      ) : (
-                                        <span className="text-[10px] bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full flex items-center">
-                                          <Star className="h-3 w-3 mr-1 fill-current" /> Rated
-                                        </span>
-                                      )}
-                                    </div>
-                                  </motion.div>
+                                  <AgentResult
+                                    result={result}
+                                    agent={agent}
+                                    index={index}
+                                    onRate={() => setReviewingAgent({
+                                      id: agent.id,
+                                      name: agent.name || agent.serviceType,
+                                      txHash: result.txHash || "",
+                                      index,
+                                    })}
+                                  />
                                 )}
                                 {result?.error && (
                                   <motion.div

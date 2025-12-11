@@ -65,12 +65,18 @@ interface Agent {
 const SERVICE_TYPES = [
   "All",
   "Weather Data",
-  "Market Analysis",
-  "Content Generation",
-  "Code Review",
-  "Data Processing",
-  "Research",
   "Translation",
+  "Sentiment Analysis",
+  "Image Generation",
+  "Code Generation",
+  "Chatbot",
+  "Summarization",
+  "Data Analysis",
+  "Text to Speech",
+  "Speech to Text",
+  "Video Generation",
+  "Content Writing",
+  "Smart Search",
   "Other",
 ];
 
@@ -509,30 +515,32 @@ export default function BrowseAgentsPage() {
             initial={{ y: 100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
-            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50"
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[90%] md:w-auto"
           >
             <Card className="border-2 border-green-500 bg-card/95 backdrop-blur-lg shadow-2xl">
-              <CardContent className="p-4 flex items-center gap-6">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-lg bg-green-500/20 flex items-center justify-center">
-                    <Workflow className="h-5 w-5 text-green-500" />
-                  </div>
-                  <div>
-                    <p className="font-semibold text-sm">
-                      {selectedAgents.length} Agent{selectedAgents.length > 1 ? "s" : ""} Selected
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Total: {formatWorkflowPrice(getTotalCost())}
-                    </p>
+              <CardContent className="p-4 flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
+                <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-start">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-lg bg-green-500/20 flex items-center justify-center shrink-0">
+                      <Workflow className="h-5 w-5 text-green-500" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-sm whitespace-nowrap">
+                        {selectedAgents.length} Agent{selectedAgents.length > 1 ? "s" : ""} Selected
+                      </p>
+                      <p className="text-xs text-muted-foreground whitespace-nowrap">
+                        Total: {formatWorkflowPrice(getTotalCost())}
+                      </p>
+                    </div>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 w-full sm:w-auto">
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={clearWorkflow}
-                    className="text-muted-foreground hover:text-destructive"
+                    className="flex-1 sm:flex-none text-muted-foreground hover:text-destructive"
                   >
                     <X className="h-4 w-4 mr-1" />
                     Clear
@@ -540,7 +548,7 @@ export default function BrowseAgentsPage() {
                   <Button
                     variant="default"
                     size="sm"
-                    className="bg-green-500 hover:bg-green-600"
+                    className="flex-1 sm:flex-none bg-green-500 hover:bg-green-600"
                     onClick={() => router.push("/workflow")}
                   >
                     Build Workflow
