@@ -5,6 +5,7 @@ import { Web3Provider } from "@/lib/providers";
 import { ApolloWrapper } from "@/components/ApolloWrapper";
 import { AuthProvider } from "@/components/AuthProvider";
 import { Footer } from "@/components/Footer";
+import { Toaster } from "@/components/ui/sonner";
 import { cookies, headers } from "next/headers";
 import { cookieToInitialState } from "wagmi";
 import { config } from "@/lib/wagmi";
@@ -82,6 +83,7 @@ export default async function RootLayout({
             </AuthProvider>
           </ApolloWrapper>
         </Web3Provider>
+        <Toaster position="bottom-right" richColors closeButton />
       </body>
     </html>
   );
