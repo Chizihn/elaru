@@ -222,7 +222,11 @@ export function PayButton({
       }
 
       console.log("Transaction hash:", txHash);
-      if (txHash) {
+      
+      // Only show explorer link if txHash is a valid transaction hash (0x + 64 hex chars)
+      const isValidTxHash = txHash && /^0x[a-fA-F0-9]{64}$/.test(txHash);
+      
+      if (isValidTxHash) {
         toast.success("Payment successful!", {
           id: toastId,
           action: {
@@ -233,6 +237,9 @@ export function PayButton({
         });
       } else {
         toast.success("Payment successful!", { id: toastId });
+        if (txHash) {
+          console.warn("Received non-standard transaction reference:", txHash);
+        }
       }
 
       if (onPaymentSuccess) {

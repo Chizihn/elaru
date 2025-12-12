@@ -9,7 +9,8 @@ import { Request, Response, NextFunction } from "express";
 import { ethers } from "ethers";
 import { activeChain } from "../config/chains";
 import { settlePayment, facilitator } from "thirdweb/x402";
-import { createThirdwebClient, defineChain } from "thirdweb";
+import { createThirdwebClient } from "thirdweb";
+import { avalancheFuji } from "thirdweb/chains";
 
 export interface ElaruAgentConfig {
   walletAddress: string; // Agent's wallet to receive payments
@@ -49,7 +50,8 @@ export function createElaruAgent(config: ElaruAgentConfig) {
   });
   
   const usdcAddress = config.usdcAddress || activeChain.tokenAddress;
-  const chain = defineChain(activeChain.chainId);
+  // Use thirdweb's pre-defined chain (like x402-starter-kit does)
+  const chain = avalancheFuji;
 
   // Validate configuration
   if (!ethers.isAddress(config.walletAddress)) {

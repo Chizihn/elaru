@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 // Use official Thirdweb x402 package
 import { settlePayment, facilitator } from "thirdweb/x402";
 import { createThirdwebClient } from "thirdweb";
-import { defineChain } from "thirdweb";
+import { avalancheFuji } from "thirdweb/chains";
 import { activeChain } from '../config/chains';
 import prisma from "../configs/database";
 
@@ -20,8 +20,8 @@ const thirdwebFacilitator = facilitator({
 // USDC Address on Avalanche Fuji
 const USDC_FUJI_ADDRESS = process.env.USDC_ADDRESS || "0x5425890298aed601595a70ab815c96711a31bc65";
 
-//  Chain Definition for Thirdweb
-const activeNetwork = defineChain(activeChain.chainId); 
+//  Use thirdweb's pre-defined chain (like x402-starter-kit)
+const activeNetwork = avalancheFuji; 
 
 /**
  * Middleware to enforce x402 payment
