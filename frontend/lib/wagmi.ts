@@ -14,10 +14,10 @@ const coreWalletConnector = injected({
 export const config = createConfig({
   chains: [avalancheFuji],
   connectors: [
+    // MetaMask and other injected wallets (first = default)
+    injected(),
     // Core Wallet (Avalanche's official wallet)
     coreWalletConnector,
-    // MetaMask and other injected wallets
-    injected(),
     // WalletConnect for mobile wallets
     walletConnect({
       projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || 'demo-project-id',
